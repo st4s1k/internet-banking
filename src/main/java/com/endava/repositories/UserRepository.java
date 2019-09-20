@@ -9,8 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class UserRepository implements Repository<User> {
@@ -24,12 +26,11 @@ public class UserRepository implements Repository<User> {
     @Override
     public List<User> findAll() {
 
-        return dbConnection.transaction(connection -> {
+        return dbConnection.transaction(statement -> {
 
             List<User> users = new LinkedList<>();
 
             try {
-                Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery("select * from users");
                 while (resultSet.next()) {
                     users.add(getUserObject(resultSet));
@@ -46,12 +47,11 @@ public class UserRepository implements Repository<User> {
     @Override
     public Optional<User> findById(Long id) {
 
-        return dbConnection.transaction(connection -> {
+        return dbConnection.transaction(statement -> {
 
             Optional<User> user = Optional.empty();
 
             try {
-                Statement statement = connection.createStatement();
                 ResultSet resultSet = statement.executeQuery("select * form users where id = " + id);
                 user = Optional.of(getUserObject(resultSet));
             } catch (SQLException e) {
@@ -63,21 +63,18 @@ public class UserRepository implements Repository<User> {
     }
 
     @Override
-    public boolean save(User user) {
+    public boolean save(User user) throws SQLException {
 
         String query = findById(user.getId()).map(foundUser ->
                 "update users " +
                         "set name = " + user.getName() + "," +
                         "account_id = " + user.getAccount().getId() +
                         "where id = " + foundUser.getId() + ";")
-                .orElse("insert into users (id, name, account_id) values (" +
-                        user.getId() + "," +
-                        user.getName() + "," +
-                        user.getAccount().getId() + ");");
+                .orElseThrow(() ->
+                        new SQLException("Attempt to add an existing user (id: " + user.getId() + ")."));
 
-        dbConnection.transaction(connection -> {
+        dbConnection.transaction(statement -> {
             try {
-                Statement statement = connection.createStatement();
                 statement.executeQuery(query);
             } catch (SQLException e) {
                 e.printStackTrace();
