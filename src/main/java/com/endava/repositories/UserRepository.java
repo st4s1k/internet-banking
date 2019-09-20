@@ -30,7 +30,7 @@ public class UserRepository implements Repository<User> {
 
             try {
                 Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("select * from user");
+                ResultSet resultSet = statement.executeQuery("select * from users");
                 while (resultSet.next()) {
                     users.add(getUserObject(resultSet));
                 }
@@ -52,7 +52,7 @@ public class UserRepository implements Repository<User> {
 
             try {
                 Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery("select * form user where id = " + id);
+                ResultSet resultSet = statement.executeQuery("select * form users where id = " + id);
                 user = Optional.of(getUserObject(resultSet));
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -64,7 +64,30 @@ public class UserRepository implements Repository<User> {
 
     @Override
     public boolean save(User user) {
-        return false;
+
+        String query = findById(user.getId()).map(foundUser ->
+                "update users " +
+                        "set name = " + user.getName() + "," +
+                        "account_id = " + user.getAccount().getId() +
+                        "where id = " + foundUser.getId() + ";")
+                .orElse("insert into users (id, name, account_id) values (" +
+                        user.getId() + "," +
+                        user.getName() + "," +
+                        user.getAccount().getId() + ");");
+
+        dbConnection.transaction(connection -> {
+            try {
+                Statement statement = connection.createStatement();
+                statement.executeQuery(query);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return Optional.empty();
+        });
+
+        return findById(user.getId())
+                .map(foundUser -> foundUser.equals(user))
+                .orElse(false);
     }
 
     @Override
