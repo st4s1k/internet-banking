@@ -3,9 +3,9 @@ package com.endava;
 public class Account {
 
     private Long id;
-    private Long funds;
+    private Double funds;
 
-    public Account(Long id, Long funds) {
+    public Account(Long id, Double funds) {
         this.id = id;
         this.funds = funds;
     }
@@ -14,7 +14,7 @@ public class Account {
         return id;
     }
 
-    public Long getFunds() {
+    public Double getFunds() {
         return funds;
     }
 }
