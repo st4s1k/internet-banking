@@ -1,5 +1,7 @@
-package com.endava;
+package com.endava.controllers;
 
+import com.endava.sevices.BankingService;
+import com.endava.sevices.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +19,9 @@ public class BankingRestController {
 
     @PutMapping("/topup/{id}")
     public ResponseEntity topUp(@PathVariable Long id, @RequestParam Double funds) {
-        ResponseEntity response = new ResponseEntity(HttpStatus.OK);
-        if (userService.findById(id).isPresent()) {
-            bankingService.topUp(id, funds);
-        } else {
-            response = new ResponseEntity(HttpStatus.EXPECTATION_FAILED);
-        }
-        return response;
+        return userService.findById(id)
+                .filter(user -> bankingService.topUp(user.getId(), funds))
+                .map(user -> new ResponseEntity<>(user, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED));
     }
 }

@@ -1,4 +1,4 @@
-package com.endava;
+package com.endava.entities;
 
 public class Account {
 
