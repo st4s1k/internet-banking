@@ -29,8 +29,7 @@ public class UserRepository implements Repository<User> {
 
             List<User> users = new LinkedList<>();
 
-            try {
-                ResultSet resultSet = statement.executeQuery("select * from users");
+            try (ResultSet resultSet = statement.executeQuery("select * from users")) {
                 while (resultSet.next()) {
                     users.add(getUserObject(resultSet));
                 }
@@ -50,8 +49,7 @@ public class UserRepository implements Repository<User> {
 
             Optional<User> user = Optional.empty();
 
-            try {
-                ResultSet resultSet = statement.executeQuery("select * form users where id = " + id);
+            try (ResultSet resultSet = statement.executeQuery("select * form users where id = " + id)) {
                 user = Optional.of(getUserObject(resultSet));
             } catch (SQLException e) {
                 e.printStackTrace();
