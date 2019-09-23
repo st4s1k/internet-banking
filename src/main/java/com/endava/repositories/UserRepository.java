@@ -63,28 +63,33 @@ public class UserRepository implements Repository<User> {
     }
 
     @Override
-    public boolean save(User user) throws SQLException {
+    public boolean save(User user) {
+        try {
+            String query = findById(user.getId()).map(foundUser ->
+                    "update users " +
+                            "set name = " + user.getName() + "," +
+                            "account_id = " + user.getAccount().getId() +
+                            "where id = " + foundUser.getId() + ";")
+                    .orElseThrow(() ->
+                            new SQLException("Attempt to add an existing user (id: " + user.getId() + ")."));
 
-        String query = findById(user.getId()).map(foundUser ->
-                "update users " +
-                        "set name = " + user.getName() + "," +
-                        "account_id = " + user.getAccount().getId() +
-                        "where id = " + foundUser.getId() + ";")
-                .orElseThrow(() ->
-                        new SQLException("Attempt to add an existing user (id: " + user.getId() + ")."));
+            dbConnection.transaction(statement -> {
+                try {
+                    statement.executeQuery(query);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                return Optional.empty();
+            });
 
-        dbConnection.transaction(statement -> {
-            try {
-                statement.executeQuery(query);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            return Optional.empty();
-        });
+            return findById(user.getId())
+                    .map(foundUser -> foundUser.equals(user))
+                    .orElse(false);
 
-        return findById(user.getId())
-                .map(foundUser -> foundUser.equals(user))
-                .orElse(false);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
