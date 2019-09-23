@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/banking")
-public class BankingRestController {
+public class BankingController {
 
     @Autowired
     private BankingService bankingService;
