@@ -19,7 +19,7 @@ public class BankingService {
     public boolean topUp(Long id, Double funds) {
         Optional<User> user = userService.findById(id);
         Optional<Account> account = user.flatMap(_user -> accountService.findByUser(_user));
-        // TODO: Implement topUp()
+        account.ifPresent(acc -> acc.setFunds(acc.getFunds() + funds));
         return account.map(accountService::update).orElse(false);
     }
 }
