@@ -1,6 +1,7 @@
 package com.endava.sevices;
 
 import com.endava.entities.Account;
+import com.endava.entities.User;
 import com.endava.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,10 @@ public class AccountService {
 
     public Optional<Account> findById(Long id) {
         return accountRepository.findById(id);
+    }
+
+    public Optional<Account> findByUser(User user) {
+        return accountRepository.findByUser(user);
     }
 
     public boolean update(Account account) {

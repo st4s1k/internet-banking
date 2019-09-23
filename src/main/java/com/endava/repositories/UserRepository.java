@@ -1,7 +1,6 @@
 package com.endava.repositories;
 
 import com.endava.config.DatabaseConnection;
-import com.endava.entities.Account;
 import com.endava.entities.User;
 import com.endava.sevices.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +67,6 @@ public class UserRepository implements Repository<User> {
             String query = findById(user.getId()).map(foundUser ->
                     "update users " +
                             "set name = " + user.getName() + "," +
-                            "account_id = " + user.getAccount().getId() +
                             "where id = " + foundUser.getId() + ";")
                     .orElseThrow(() ->
                             new SQLException("Attempt to add an existing user (id: " + user.getId() + ")."));
@@ -98,17 +96,9 @@ public class UserRepository implements Repository<User> {
     }
 
     private User getUserObject(ResultSet resultSet) throws SQLException {
-
-        Long id = resultSet.getLong(1);
-        String name = resultSet.getString(2);
-        Account account = accountService
-                .findById(resultSet.getLong(3))
-                .orElse(null);
-
         return new User.Builder()
-                .setId(id)
-                .setName(name)
-                .setAccount(account)
+                .setId(resultSet.getLong(1))
+                .setName(resultSet.getString(2))
                 .build();
     }
 }

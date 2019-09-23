@@ -8,7 +8,6 @@ public class User {
 
         private Long id;
         private String name;
-        private Account account;
 
         public Builder setId(Long id) {
             this.id = id;
@@ -20,24 +19,17 @@ public class User {
             return this;
         }
 
-        public Builder setAccount(Account account) {
-            this.account = account;
-            return this;
-        }
-
         public User build() {
-            return new User(this.id, this.name, this.account);
+            return new User(this.id, this.name);
         }
     }
 
     private Long id;
     private String name;
-    private Account account;
 
-    private User(Long id, String name, Account account) {
+    private User(Long id, String name) {
         this.id = id;
         this.name = name;
-        this.account = account;
     }
 
     public Long getId() {
@@ -48,22 +40,17 @@ public class User {
         return name;
     }
 
-    public Account getAccount() {
-        return account;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
         return Objects.equals(id, user.id) &&
-                Objects.equals(name, user.name) &&
-                Objects.equals(account, user.account);
+                Objects.equals(name, user.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, account);
+        return Objects.hash(id, name);
     }
 }
