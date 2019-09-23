@@ -1,11 +1,10 @@
 package com.endava.config;
 
+import org.apache.tomcat.util.buf.StringUtils;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
@@ -14,27 +13,30 @@ import java.util.function.Function;
 public class DatabaseConnection {
 
     public void initDB() {
-        StringBuilder query = new StringBuilder();
-
-        query.append("create table users (");
-        query.append("   id serial primary key,");
-        query.append("   name varchar(20) not null");
-        query.append(");");
-
-        query.append("create table accounts (");
-        query.append("   id serial primary key,");
-        query.append("   funds numeric not null,");
-        query.append("   user_id integer references users(id) on delete cascade");
-        query.append(");");
-
         transaction(statement -> {
-            try {
-                statement.executeQuery(query.toString());
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            crateTable(statement, "users",
+                    "id serial primary key",
+                    "name varchar(20) not null");
+            crateTable(statement, "accounts",
+                    "id serial primary key",
+                    "funds numeric not null",
+                    "user_id integer references users(id) on delete cascade");
             return Optional.empty();
         });
+    }
+
+    private void crateTable(Statement statement, String table, String... columns) {
+        try (ResultSet resultSet = statement.executeQuery("select to_regclass('" + table + "')")) {
+            while (resultSet.next()) {
+                if (resultSet.getString(1) != null) {
+                    return;
+                }
+            }
+            String _columns = StringUtils.join(Arrays.asList(columns), ',');
+            statement.executeUpdate("create table " + table + " (" + _columns + ");");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public <T> Optional<T> transaction(Function<Statement, Optional<T>> operation) {
