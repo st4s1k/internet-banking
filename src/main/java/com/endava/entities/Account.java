@@ -26,6 +26,18 @@ public class Account {
         return user;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setFunds(Double funds) {
+        this.funds = funds;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
