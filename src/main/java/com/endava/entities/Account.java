@@ -1,14 +1,15 @@
 package com.endava.entities;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 public class Account {
 
     private Long id;
-    private Double funds;
+    private BigDecimal funds;
     private User user;
 
-    public Account(Long id, Double funds, User user) {
+    public Account(Long id, BigDecimal funds, User user) {
         this.id = id;
         this.funds = funds;
         this.user = user;
@@ -18,12 +19,24 @@ public class Account {
         return id;
     }
 
-    public Double getFunds() {
+    public BigDecimal getFunds() {
         return funds;
     }
 
     public User getUser() {
         return user;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setFunds(BigDecimal funds) {
+        this.funds = funds;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     @Override
