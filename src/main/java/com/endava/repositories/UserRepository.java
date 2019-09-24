@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+//write integration test, with full spring context using h2 db
 public class UserRepository implements Repository<User> {
 
     @Autowired
@@ -30,9 +31,7 @@ public class UserRepository implements Repository<User> {
             List<User> users = new LinkedList<>();
 
             try (ResultSet resultSet = statement.executeQuery("select * from users")) {
-                while (resultSet.next()) {
-                    users.add(getUserObject(resultSet));
-                }
+                users.add(getUserObject(resultSet));
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -44,48 +43,54 @@ public class UserRepository implements Repository<User> {
 
     @Override
     public Optional<User> findById(Long id) {
+        return findByField("id", id);
+    }
 
-        return dbConnection.transaction(statement -> {
+    public Optional<User> findByName(String name) {
+        return findByField("name", "'" + name + "'");
+    }
 
-            Optional<User> user = Optional.empty();
-
-            try (ResultSet resultSet = statement.executeQuery("select * form users where id = " + id)) {
-                user = Optional.of(getUserObject(resultSet));
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            return user;
-        });
+    public Optional<User> findByField(String field, Object value) {
+        return Optional.ofNullable(field)
+                .flatMap((_field) -> dbConnection.transaction(statement -> {
+                    Optional<User> user = Optional.empty();
+                    try (ResultSet resultSet = statement.executeQuery("select * from users where " + _field + " = " + value)) {
+                        user = Optional.ofNullable(getUserObject(resultSet));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    return user;
+                }));
     }
 
     @Override
-    public boolean save(User user) {
-        try {
-            String query = findById(user.getId()).map(foundUser ->
-                    "update users " +
-                            "set name = " + user.getName() + "," +
-                            "where id = " + foundUser.getId() + ";")
-                    .orElseThrow(() ->
-                            new SQLException("Attempt to add an existing user (id: " + user.getId() + ")."));
+    public boolean save(User user) throws SQLException {
 
-            dbConnection.transaction(statement -> {
-                try {
-                    statement.executeQuery(query);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                return Optional.empty();
-            });
-
-            return findById(user.getId())
-                    .map(foundUser -> foundUser.equals(user))
-                    .orElse(false);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+        if (!Optional.ofNullable(user).isPresent()) {
+            throw new SQLException("Attempt to save a null entry!");
         }
+
+        Optional<User> sameUser = findByName(user.getName());
+
+        if (sameUser.isPresent()) {
+            throw new SQLException("Attempt to add an existing user (id: " + sameUser.get().getId() + ").");
+        }
+
+        String query = "insert into users(name) values ('" + user.getName() + "');";
+
+        dbConnection.transaction(statement -> {
+            try {
+                statement.executeUpdate(query);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return Optional.empty();
+        });
+
+        return user.getId() == null ? true : findById(user.getId())
+                .map(foundUser -> foundUser.equals(user))
+                .orElse(false);
+
     }
 
     @Override
@@ -94,9 +99,13 @@ public class UserRepository implements Repository<User> {
     }
 
     private User getUserObject(ResultSet resultSet) throws SQLException {
-        return new User.Builder()
-                .setId(resultSet.getLong(1))
-                .setName(resultSet.getString(2))
-                .build();
+        User user = null;
+        while (resultSet.next()) {
+            user = new User.Builder()
+                    .setId(resultSet.getLong(1))
+                    .setName(resultSet.getString(2))
+                    .build();
+        }
+        return user;
     }
 }

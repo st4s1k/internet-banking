@@ -2,6 +2,7 @@ package com.endava.entities;
 
 import java.util.Objects;
 
+// add validations
 public class User {
 
     public static class Builder {

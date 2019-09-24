@@ -13,6 +13,7 @@ import java.util.function.Function;
 public class DatabaseConnection {
 
     public void initDB() {
+        // TODO: Refactor using flyway
         transaction(statement -> {
             crateTable(statement, "users",
                     "id serial primary key",
@@ -39,12 +40,16 @@ public class DatabaseConnection {
         }
     }
 
+
+    // automate with spring auto configuration
     public <T> Optional<T> transaction(Function<Statement, Optional<T>> operation) {
 
         String url = "jdbc:postgresql:internetbanking";
         Properties props = new Properties();
         props.setProperty("user", "postgres");
         props.setProperty("password", "postgres");
+
+        // TODO: move properties to application.properties
 
         try (Connection connection = DriverManager.getConnection(url, props);
              Statement statement = connection.createStatement()) {

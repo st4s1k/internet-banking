@@ -30,4 +30,8 @@ public class AccountService {
     public boolean update(Account account) {
         return accountRepository.save(account);
     }
+
+    public boolean createAccount(User user) {
+        return false;
+    }
 }
