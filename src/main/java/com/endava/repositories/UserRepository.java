@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-//write integration test, with full spring context using h2 db
+// TODO: write integration test, with full spring context using h2 db
 public class UserRepository implements Repository<User> {
 
     @Autowired

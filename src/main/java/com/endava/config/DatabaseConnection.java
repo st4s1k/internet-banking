@@ -41,7 +41,7 @@ public class DatabaseConnection {
     }
 
 
-    // automate with spring auto configuration
+    // TODO: automate with spring auto configuration
     public <T> Optional<T> transaction(Function<Statement, Optional<T>> operation) {
 
         String url = "jdbc:postgresql:internetbanking";
