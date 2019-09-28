@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class InternetBanking {
     public static void main( String[] args )    {
         SpringApplication.run(InternetBanking.class, args);
-        DatabaseConnection connection = new DatabaseConnection();
-        connection.initDB();
+//        DatabaseConnection connection = new DatabaseConnection();
+//        connection.initDB();
     }
 }

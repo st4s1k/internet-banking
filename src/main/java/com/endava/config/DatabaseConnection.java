@@ -1,16 +1,23 @@
 package com.endava.config;
 
 import org.apache.tomcat.util.buf.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.sql.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.function.Function;
 
 @Component
 public class DatabaseConnection {
+
+    @Autowired
+    private DataSource dataSource;
 
     public void initDB() {
         // TODO: Refactor using flyway
@@ -40,25 +47,14 @@ public class DatabaseConnection {
         }
     }
 
-
-    // TODO: automate with spring auto configuration
     public <T> Optional<T> transaction(Function<Statement, Optional<T>> operation) {
-
-        String url = "jdbc:postgresql:internetbanking";
-        Properties props = new Properties();
-        props.setProperty("user", "postgres");
-        props.setProperty("password", "postgres");
-
-        // TODO: move properties to application.properties
-
-        try (Connection connection = DriverManager.getConnection(url, props);
+        try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
             Class.forName("org.postgresql.Driver");
             return operation.apply(statement);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return Optional.empty();
     }
 }
