@@ -1,21 +1,26 @@
 package com.endava.entities;
 
+import com.endava.annotations.Column;
+import com.endava.dto.UserDTO;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Objects;
 
-// TODO: add validations
-public class User {
+public class User implements Entity, Cloneable {
 
     public static class Builder {
 
         private Long id;
+
         private String name;
 
-        public Builder setId(Long id) {
+        public Builder setId(@NotNull Long id) {
             this.id = id;
             return this;
         }
 
-        public Builder setName(String name) {
+        public Builder setName(@NotNull @Size(min = 3, max = 20) String name) {
             this.name = name;
             return this;
         }
@@ -23,14 +28,29 @@ public class User {
         public User build() {
             return new User(this.id, this.name);
         }
+
     }
 
-    private Long id;
-    private String name;
+    public static String TABLE_NAME = "users";
+    public static String ID_NAME = "id";
+
+    @Column("id")
+    private final Long id;
+    @Column("name")
+    private final String name;
+
+    public User() {
+        id = null;
+        name = null;
+    }
 
     private User(Long id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    public static User from(UserDTO userDTO) {
+        return new User(userDTO.getId(), userDTO.getName());
     }
 
     public Long getId() {
@@ -42,16 +62,34 @@ public class User {
     }
 
     @Override
+    public String getTableName() {
+        return TABLE_NAME;
+    }
+
+    @Override
+    public String getIdName() {
+        return ID_NAME;
+    }
+
+    @Override
+    public Object getIdValue() {
+        return id;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(id, user.id) &&
-                Objects.equals(name, user.name);
+        return o instanceof User
+                && (this == o || Objects.equals(name, ((User) o).name));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name);
+        return Objects.hash(name);
+    }
+
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    public User clone() {
+        return new Builder().setId(id).setName(name).build();
     }
 }
