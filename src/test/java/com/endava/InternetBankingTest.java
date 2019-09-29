@@ -4,7 +4,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class AppTest
+// TODO: write integration test, with full spring context using h2 db
+public class InternetBankingTest
 {
     @Test
     public void shouldAnswerWithTrue()
