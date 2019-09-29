@@ -5,7 +5,6 @@ import com.endava.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +14,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public boolean createUser(User user) throws SQLException {
+    public Optional<User> createUser(User user) {
         return userRepository.save(user);
     }
 
@@ -25,5 +24,9 @@ public class UserService {
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    public Optional<User> findByName(String name) {
+        return userRepository.findByName(name);
     }
 }
