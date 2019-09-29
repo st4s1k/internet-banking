@@ -3,6 +3,7 @@ package com.endava.sevices;
 import com.endava.entities.Account;
 import com.endava.entities.User;
 import com.endava.repositories.AccountRepository;
+import com.endava.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,9 @@ public class AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public List<Account> findAll() {
         return accountRepository.findAll();
@@ -27,11 +31,13 @@ public class AccountService {
         return accountRepository.findByUser(user);
     }
 
-    public boolean update(Account account) {
-        return accountRepository.save(account);
+    public Optional<Account> update(Account account) {
+        return accountRepository.update(account);
     }
 
-    public boolean createAccount(User user) {
-        return false;
+    public Optional<Account> createAccount(User user) {
+        return accountRepository.save(new Account.Builder()
+                .setUser(user)
+                .build());
     }
 }
