@@ -1,13 +1,16 @@
 package com.endava.controllers;
 
+import com.endava.dto.TransferDTO;
+import com.endava.sevices.AccountService;
 import com.endava.sevices.BankingService;
-import com.endava.sevices.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
+import javax.validation.Valid;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 @RestController
 @RequestMapping("/banking")
@@ -16,17 +19,27 @@ public class BankingController {
     @Autowired
     private BankingService bankingService;
 
-    @Autowired
-    private UserService userService;
+    @PutMapping("/topup")
+    public ResponseEntity topUp(@Valid @RequestBody TransferDTO transferDTO) {
+        return transfer(transferDTO, dto -> bankingService.topUp(
+                dto.getSource(), dto.getDestination(), dto.getFunds()));
+    }
 
-    // TODO: top-up account -> account
-    @PutMapping("/topup/{id}")
-    public ResponseEntity topUp(
-            @PathVariable Long id,
-            @RequestParam BigDecimal funds) {
-        return userService.findById(id)
-                .filter(user -> bankingService.topUp(user.getId(), funds))
-                .map(user -> new ResponseEntity<>(user, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED));
+    @PutMapping("/drawdown")
+    public ResponseEntity drawDown(@Valid @RequestBody TransferDTO transferDTO) {
+        return transfer(transferDTO, dto -> bankingService.drawDown(
+                dto.getSource(), dto.getDestination(), dto.getFunds()));
+    }
+
+    private ResponseEntity transfer(TransferDTO transferDTO, Consumer<TransferDTO> operation) {
+        return Optional.ofNullable(transferDTO.getSource())
+                .map(src -> Optional.ofNullable(transferDTO.getDestination())
+                        .map(dst -> {
+                            operation.accept(transferDTO);
+                            return ResponseEntity.ok("Operation executed successfully.");
+                        }).orElse(ResponseEntity.badRequest()
+                                .body("Could not define receiver account.")))
+                .orElse(ResponseEntity.badRequest()
+                        .body("Could not define sender account"));
     }
 }

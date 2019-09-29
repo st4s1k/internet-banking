@@ -1,6 +1,7 @@
 package com.endava.controllers;
 
-import com.endava.entities.User;
+import com.endava.dto.AccountDTO;
+import com.endava.entities.Account;
 import com.endava.sevices.AccountService;
 import com.endava.sevices.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.List;
 
 @RestController
 @RequestMapping("/accounts")
@@ -22,17 +23,21 @@ public class AccountController {
 
     @GetMapping
     public ResponseEntity getAllAccounts() {
-        return new ResponseEntity<>(accountService.findAll(), HttpStatus.OK);
+        List<Account> accounts = accountService.findAll();
+        return accounts.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(accounts);
     }
 
     @PutMapping
-    public ResponseEntity createAccount(@RequestBody Long userId) {
-        Optional<User> user = userService.findById(userId);
-        return user.<ResponseEntity>map(value -> accountService.createAccount(value)
-                ? new ResponseEntity<>("Account for user " + value.getName() + " successfully created", HttpStatus.OK)
-                : new ResponseEntity<>("Failed to create account for user " + value.getName(),
-                HttpStatus.EXPECTATION_FAILED))
-                .orElseGet(() -> new ResponseEntity<>("No user found with id: " + userId,
-                        HttpStatus.EXPECTATION_FAILED));
+    public ResponseEntity createAccount(@RequestBody AccountDTO accountDTO) {
+        return userService.findById(accountDTO.getUser().getId())
+                .map(user -> accountService.createAccount(user)
+                        .map(account -> ResponseEntity.ok("Account for user " +
+                                account.getUser().getName() + " successfully created"))
+                        .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body("Failed to create account for user " + user.getName())))
+                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("No user found with id: " + accountDTO.getUser().getId()));
     }
 }

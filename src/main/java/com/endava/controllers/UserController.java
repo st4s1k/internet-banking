@@ -1,5 +1,6 @@
 package com.endava.controllers;
 
+import com.endava.dto.UserDTO;
 import com.endava.entities.User;
 import com.endava.sevices.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
@@ -19,19 +21,23 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity getAllUsers() {
-        return new ResponseEntity<>(userService.findAll(), HttpStatus.OK);
+        List<User> users = userService.findAll();
+        return users.isEmpty()
+                ? ResponseEntity.ok(users)
+                : ResponseEntity.noContent().build();
     }
 
     @PutMapping
-    public ResponseEntity createUser(@RequestBody @Valid User user) {
-        try {
-            // TODO: Test SQLExceptions
-            return userService.createUser(user)
-                    ? new ResponseEntity<>("User " + user.getName() + " successfully created.", HttpStatus.OK)
-                    : new ResponseEntity<>("Failed to create user " + user.getName(),
-                    HttpStatus.EXPECTATION_FAILED);
-        } catch (SQLException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.EXPECTATION_FAILED);
+    public ResponseEntity createUser(@RequestBody @Valid UserDTO userDTO) {
+        Optional<User> user = userService.findByName(userDTO.getName());
+        if (user.isPresent()) {
+            return ResponseEntity.badRequest().body("User with this name already exists.");
         }
+        User userToBeCreated = User.from(userDTO);
+        Optional<User> createdUser = userService.createUser(userToBeCreated);
+        return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
+                ? ResponseEntity.ok("User " + userDTO.getName() + " successfully created.")
+                : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to create user " + userDTO.getName());
     }
 }
