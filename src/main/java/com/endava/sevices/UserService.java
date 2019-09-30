@@ -14,11 +14,19 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    public Optional<User> createUser(User user) {
+        return userRepository.save(user);
+    }
+
     public List<User> findAll() {
         return userRepository.findAll();
     }
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    public Optional<User> findByName(String name) {
+        return userRepository.findByName(name);
     }
 }

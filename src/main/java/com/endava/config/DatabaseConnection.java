@@ -1,30 +1,27 @@
 package com.endava.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.function.Function;
 
 @Component
 public class DatabaseConnection {
 
-    public <T> Optional<T> transaction(Function<Connection, Optional<T>> operation) {
+    @Autowired
+    private DataSource dataSource;
 
-        String url = "jdbc:postgresql:internetbanking";
-        Properties props = new Properties();
-        props.setProperty("user", "postgres");
-        props.setProperty("password", "postgres");
-
-        try (Connection connection = DriverManager.getConnection(url, props)) {
-            Class.forName("org.postgresql.Driver");
-            return operation.apply(connection);
+    public <T> Optional<T> transaction(Function<Statement, Optional<T>> operation) {
+        try (Connection connection = dataSource.getConnection();
+             Statement statement = connection.createStatement()) {
+            return operation.apply(statement);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return Optional.empty();
     }
 }
