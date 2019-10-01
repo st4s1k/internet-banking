@@ -56,16 +56,19 @@ public class BankingService {
     private void transfer(Account source,
                           Account destination,
                           BigDecimal funds) {
-        Account newSource = new Account.Builder()
+        
+        Account newSource = Account.builder()
                 .setId(source.getId())
                 .setFunds(source.getFunds().subtract(funds))
                 .setUser(source.getUser())
                 .build();
-        Account newDestination = new Account.Builder()
+
+        Account newDestination = Account.builder()
                 .setId(destination.getId())
                 .setFunds(destination.getFunds().add(funds))
                 .setUser(destination.getUser())
                 .build();
+
         if (!accountService.update(newSource).isPresent()
                 || !accountService.update(newDestination).isPresent()) {
             accountService.update(source);

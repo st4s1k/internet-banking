@@ -29,12 +29,19 @@ public class UserController {
 
     @PutMapping
     public ResponseEntity createUser(@RequestBody @Valid UserDTO userDTO) {
+
         Optional<User> user = userService.findByName(userDTO.getName());
+
         if (user.isPresent()) {
             return ResponseEntity.badRequest().body("User with this name already exists.");
         }
-        User userToBeCreated = User.from(userDTO);
+
+        User userToBeCreated = User.builder()
+                .setName(userDTO.getName())
+                .build();
+
         Optional<User> createdUser = userService.createUser(userToBeCreated);
+
         return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
                 ? ResponseEntity.ok("User " + userDTO.getName() + " successfully created.")
                 : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

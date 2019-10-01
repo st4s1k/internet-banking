@@ -1,45 +1,21 @@
 package com.endava.repositories;
 
-import com.endava.config.DatabaseConnection;
 import com.endava.entities.User;
-import com.endava.sevices.AccountService;
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
-@Component
-public class UserRepository implements Repository<User> {
+@Repository
+public class UserRepository {
 
     @Autowired
-    private DatabaseConnection dbConnection;
+    private Session session;
 
-    @Autowired
-    private AccountService accountService;
-
-    @Override
-    public DatabaseConnection getDatabaseConnection() {
-        return dbConnection;
+    public User save(User user) {
+        return (User) session.save(user);
     }
 
-    @Override
-    public String getTableName() {
-        return User.TABLE_NAME;
-    }
-
-    @Override
-    public String getIdName() {
-        return User.ID_NAME;
-    }
-
-    @Override
-    public Class<User> getEntityClass() {
-        return User.class;
-    }
-
-    public Optional<User> findByName(String name) {
-        List<User> users = findByField("name", name);
-        return users.isEmpty() ? Optional.empty() : Optional.ofNullable(users.get(0));
+    public User remove(User user) {
+        session.
     }
 }

@@ -36,7 +36,7 @@ public class AccountService {
     }
 
     public Optional<Account> createAccount(User user) {
-        return accountRepository.save(new Account.Builder()
+        return accountRepository.save(Account.builder()
                 .setUser(user)
                 .build());
     }

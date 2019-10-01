@@ -1,43 +1,21 @@
 package com.endava.entities;
 
-import com.endava.annotations.Column;
-import com.endava.dto.UserDTO;
-
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Objects;
 
-public class User implements Entity, Cloneable {
+@Entity
+@Table(name = "users")
+public class User {
 
-    public static class Builder {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue
+    private Long id;
 
-        private Long id;
-
-        private String name;
-
-        public Builder setId(@NotNull Long id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder setName(@NotNull @Size(min = 3, max = 20) String name) {
-            this.name = name;
-            return this;
-        }
-
-        public User build() {
-            return new User(this.id, this.name);
-        }
-
-    }
-
-    public static String TABLE_NAME = "users";
-    public static String ID_NAME = "id";
-
-    @Column("id")
-    private final Long id;
-    @Column("name")
-    private final String name;
+    @Column(name = "name")
+    private String name;
 
     public User() {
         id = null;
@@ -49,31 +27,24 @@ public class User implements Entity, Cloneable {
         this.name = name;
     }
 
-    public static User from(UserDTO userDTO) {
-        return new User(userDTO.getId(), userDTO.getName());
+    public static Builder builder() {
+        return new Builder();
     }
 
     public Long getId() {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
 
-    @Override
-    public String getTableName() {
-        return TABLE_NAME;
-    }
-
-    @Override
-    public String getIdName() {
-        return ID_NAME;
-    }
-
-    @Override
-    public Object getIdValue() {
-        return id;
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
@@ -91,5 +62,30 @@ public class User implements Entity, Cloneable {
     @Override
     public User clone() {
         return new Builder().setId(id).setName(name).build();
+    }
+
+    public static class Builder {
+
+        private Long id;
+
+        private String name;
+
+        private Builder() {
+        }
+
+        public Builder setId(@NotNull Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setName(@NotNull @Size(min = 3, max = 20) String name) {
+            this.name = name;
+            return this;
+        }
+
+        public User build() {
+            return new User(this.id, this.name);
+        }
+
     }
 }
