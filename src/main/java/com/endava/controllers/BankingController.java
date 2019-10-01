@@ -1,12 +1,13 @@
 package com.endava.controllers;
 
 import com.endava.dto.TransferDTO;
-import com.endava.sevices.AccountService;
 import com.endava.sevices.BankingService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.Optional;
@@ -21,19 +22,20 @@ public class BankingController {
 
     @PutMapping("/topup")
     public ResponseEntity topUp(@Valid @RequestBody TransferDTO transferDTO) {
+
         return transfer(transferDTO, dto -> bankingService.topUp(
-                dto.getSource(), dto.getDestination(), dto.getFunds()));
+                dto.getSourceId(), dto.getDestinationId(), dto.getFunds()));
     }
 
     @PutMapping("/drawdown")
     public ResponseEntity drawDown(@Valid @RequestBody TransferDTO transferDTO) {
         return transfer(transferDTO, dto -> bankingService.drawDown(
-                dto.getSource(), dto.getDestination(), dto.getFunds()));
+                dto.getSourceId(), dto.getDestinationId(), dto.getFunds()));
     }
 
     private ResponseEntity transfer(TransferDTO transferDTO, Consumer<TransferDTO> operation) {
-        return Optional.ofNullable(transferDTO.getSource())
-                .map(src -> Optional.ofNullable(transferDTO.getDestination())
+        return Optional.ofNullable(transferDTO.getSourceId())
+                .map(src -> Optional.ofNullable(transferDTO.getDestinationId())
                         .map(dst -> {
                             operation.accept(transferDTO);
                             return ResponseEntity.ok("Operation executed successfully.");

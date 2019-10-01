@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/accounts")
@@ -31,13 +32,15 @@ public class AccountController {
 
     @PutMapping
     public ResponseEntity createAccount(@RequestBody AccountDTO accountDTO) {
-        return userService.findById(accountDTO.getUser().getId())
-                .map(user -> accountService.createAccount(user)
-                        .map(account -> ResponseEntity.ok("Account for user " +
-                                account.getUser().getName() + " successfully created"))
+        return Optional.ofNullable(accountDTO)
+                .map(dto -> userService.findById(dto.getUserId())
+                        .map(user -> accountService.createAccount(user)
+                                .map(account -> ResponseEntity.ok("Account for user " +
+                                        account.getUser().getName() + " successfully created"))
+                                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body("Failed to create account for user " + user.getName())))
                         .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body("Failed to create account for user " + user.getName())))
-                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("No user found with id: " + accountDTO.getUser().getId()));
+                                .body("No user found with id: " + dto.getUserId())))
+                .orElse(ResponseEntity.badRequest().body("Unable to process request body"));
     }
 }

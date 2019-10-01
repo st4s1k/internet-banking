@@ -1,19 +1,10 @@
 package com.endava.dto;
 
-import com.endava.entities.User;
-import com.endava.sevices.UserService;
-import com.fasterxml.jackson.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Objects;
 
 public class AccountDTO {
-
-    @JsonIgnore
-    @Autowired
-    private UserService userService;
 
     private Long id;
 
@@ -21,11 +12,7 @@ public class AccountDTO {
     private BigDecimal funds;
 
     @NotNull(message = "Account user cannot be NULL.")
-    @JsonIdentityReference(alwaysAsId = true)
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "user_id")
-    private User user;
+    private Long userId;
 
     public Long getId() {
         return id;
@@ -35,29 +22,24 @@ public class AccountDTO {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    @JsonProperty("user_id")
-    public void setUser(Long id) {
-        this.user = userService.findById(id).orElse(null);
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     @SuppressWarnings("ObjectComparison")
     @Override
     public boolean equals(Object o) {
         return o instanceof AccountDTO
-                && (this == o || Objects.equals(user, ((AccountDTO) o).user));
+                && (this == o || Objects.equals(userId, ((AccountDTO) o).userId));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user);
+        return Objects.hash(userId);
     }
 
 }

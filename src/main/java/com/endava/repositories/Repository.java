@@ -17,7 +17,9 @@ interface Repository<T extends Entity> {
     Function<Entity, String> REMOVE_SQL = e -> {
         String table = e.getTableName();
         String column = e.getIdName();
-        String value = e.getIdValue().toString();
+        String value = e.getIdValue() instanceof String
+                ? "'" + e.getIdValue() + "'"
+                : e.getIdValue().toString();
         return "delete from " + table + " where " + column + " = " + value + " returning *";
     };
 
@@ -34,10 +36,13 @@ interface Repository<T extends Entity> {
                     values.append(", ");
                 }
                 columns.append(fieldNames[i]);
-                values.append(fieldValues[i]);
+                String value = fieldValues[i] instanceof String
+                        ? "'" + fieldValues[i] + "'"
+                        : fieldValues[i].toString();
+                values.append(value);
             }
         }
-        return "insert into " + table + "(" + columns + ") values ('" + values + "') returning *";
+        return "insert into " + table + "(" + columns + ") values (" + values + ") returning *";
     };
 
     Function<Entity, String> UPDATE_SQL = e -> {
@@ -49,7 +54,10 @@ interface Repository<T extends Entity> {
             if (columns.length() > 0) {
                 columns.append(", ");
             }
-            columns.append(fieldNames[i]).append(" = ").append(fieldValues[i]);
+            String value = fieldValues[i] instanceof String
+                    ? "'" + fieldValues[i] + "'"
+                    : fieldValues[i].toString();
+            columns.append(fieldNames[i]).append(" = ").append(value);
         }
         return columns.length() == 0 ? ""
                 : "update " + table + " set " + columns + " returning *";
