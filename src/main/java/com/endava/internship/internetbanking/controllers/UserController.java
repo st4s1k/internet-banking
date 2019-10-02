@@ -1,9 +1,10 @@
-package com.endava.controllers;
+package com.endava.internship.internetbanking.controllers;
 
-import com.endava.dto.UserDTO;
-import com.endava.entities.User;
-import com.endava.sevices.UserService;
+import com.endava.internship.internetbanking.dto.UserDTO;
+import com.endava.internship.internetbanking.entities.User;
+import com.endava.internship.internetbanking.sevices.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,15 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
+    @Value("user.creation.success")
+    private String userCreationSuccess;
+
+    @Value("user.creation.fail")
+    private String userCreationFail;
+
+    @Value("user.creation.fail.existing.username")
+    private String userCreationFailExistingUsername;
 
     @Autowired
     private UserService userService;
@@ -33,7 +43,7 @@ public class UserController {
         Optional<User> user = userService.findByName(userDTO.getName());
 
         if (user.isPresent()) {
-            return ResponseEntity.badRequest().body("User with this name already exists.");
+            return ResponseEntity.badRequest().body(userCreationFailExistingUsername);
         }
 
         User userToBeCreated = User.builder()
@@ -43,8 +53,8 @@ public class UserController {
         Optional<User> createdUser = userService.createUser(userToBeCreated);
 
         return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
-                ? ResponseEntity.ok("User " + userDTO.getName() + " successfully created.")
+                ? ResponseEntity.ok(userCreationSuccess + " [username: " + userDTO.getName() + "]")
                 : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to create user " + userDTO.getName());
+                .body(userCreationFail + " [username: " + userDTO.getName() + "]");
     }
 }

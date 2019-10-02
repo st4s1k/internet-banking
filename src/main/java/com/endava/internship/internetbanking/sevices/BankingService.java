@@ -1,6 +1,6 @@
-package com.endava.sevices;
+package com.endava.internship.internetbanking.sevices;
 
-import com.endava.entities.Account;
+import com.endava.internship.internetbanking.entities.Account;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.endava.entities;
+package com.endava.internship.internetbanking.entities;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -59,7 +59,7 @@ public class Account {
     }
 
     public User getUser() {
-        return user;
+        return user.clone();
     }
 
     public void setUser(User user) {
@@ -80,7 +80,11 @@ public class Account {
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @Override
     public Account clone() {
-        return new Builder().setId(id).setFunds(funds).setUser(user).build();
+        return builder()
+                .setId(id)
+                .setFunds(funds)
+                .setUser(user.clone())
+                .build();
     }
 
     public static class Builder {

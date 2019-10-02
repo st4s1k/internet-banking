@@ -1,8 +1,8 @@
-package com.endava;
+package com.endava.internship.internetbanking;
 
-import com.endava.entities.User;
-import com.endava.repositories.UserRepository;
-import com.endava.sevices.UserService;
+import com.endava.internship.internetbanking.entities.User;
+import com.endava.internship.internetbanking.repositories.UserRepository;
+import com.endava.internship.internetbanking.sevices.UserService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +29,14 @@ public class InternetBankingUserServiceTest {
 
     @Test
     public void testCreateUser() {
-        Optional<User> mockUser = Optional.of(new User.Builder().setId(12L).setName("Stanislav Gîrlea").build());
+        Optional<User> mockUser = Optional.of(User.builder().setId(12L).setName("Stanislav Gîrlea").build());
         when(userRepository.save(null)).thenReturn(mockUser);
         assertEquals(userRepository.save(null), mockUser);
     }
 
     @Test
     public void testFindUserById() {
-        Optional<User> optMockUser = Optional.of(new User.Builder()
+        Optional<User> optMockUser = Optional.of(User.builder()
                 .setId(1L).setName("Stanislav Gîrlea").build());
         when(userRepository.findById(1L)).thenReturn(optMockUser);
         Optional<User> optFoundUser = userService.findById(1L);

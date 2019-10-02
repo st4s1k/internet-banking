@@ -1,4 +1,4 @@
-package com.endava.dto;
+package com.endava.internship.internetbanking.dto;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;

@@ -1,4 +1,4 @@
-package com.endava.entities;
+package com.endava.internship.internetbanking.entities;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;

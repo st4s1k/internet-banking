@@ -1,6 +1,6 @@
-package com.endava;
+package com.endava.internship.internetbanking;
 
-import com.endava.entities.User;
+import com.endava.internship.internetbanking.entities.User;
 import com.google.gson.Gson;
 import org.junit.Test;
 import org.junit.runner.RunWith;
