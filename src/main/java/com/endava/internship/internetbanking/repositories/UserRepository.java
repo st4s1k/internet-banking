@@ -1,8 +1,8 @@
 package com.endava.internship.internetbanking.repositories;
 
 import com.endava.internship.internetbanking.entities.User;
-import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -14,26 +14,26 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Transactional
 public class UserRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public Optional<User> save(User user) {
-        Session session = entityManager.unwrap(Session.class);
-        Long savedUserId = (Long) session.save(user);
-        return findById(savedUserId);
+        entityManager.persist(user);
+        entityManager.flush();
+        return Optional.of(user).filter(u -> u.getId() != null);
     }
 
     public Optional<User> remove(User user) {
-        Session session = entityManager.unwrap(Session.class);
-        session.remove(user);
-        return findById(user.getId());
+        Optional<User> userToBeRemoved = findById(user.getId());
+        userToBeRemoved.ifPresent(entityManager::remove);
+        return userToBeRemoved;
     }
 
     public Optional<User> findById(Long userId) {
-        Session session = entityManager.unwrap(Session.class);
-        return Optional.of(session.find(User.class, userId));
+        return Optional.ofNullable(entityManager.find(User.class, userId));
     }
 
     public Optional<User> findByName(String name) {
@@ -56,8 +56,6 @@ public class UserRepository {
     }
 
     public Optional<User> update(User user) {
-        Session session = entityManager.unwrap(Session.class);
-        session.update(user);
-        return findById(user);
+        return Optional.ofNullable(entityManager.merge(user));
     }
 }

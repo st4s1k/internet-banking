@@ -2,8 +2,8 @@ package com.endava.internship.internetbanking.repositories;
 
 import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.entities.User;
-import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -12,10 +12,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Repository
+@Transactional
 public class AccountRepository {
 
     @PersistenceContext
@@ -23,8 +23,8 @@ public class AccountRepository {
 
     public Optional<Account> save(Account account) {
         entityManager.persist(account);
-        return Optional.of(account)
-                .filter(a -> Objects.nonNull(a.getId()));
+        entityManager.flush();
+        return Optional.of(account).filter(a -> a.getId() != null);
     }
 
     public Optional<Account> remove(Account account) {
@@ -33,8 +33,7 @@ public class AccountRepository {
     }
 
     public Optional<Account> findById(Long accountId) {
-        Session session = entityManager.unwrap(Session.class);
-        return Optional.of(session.find(Account.class, accountId));
+        return Optional.of(entityManager.find(Account.class, accountId));
     }
 
     public List<Account> findByUser(User user) {
@@ -55,8 +54,7 @@ public class AccountRepository {
     }
 
     public Optional<Account> update(Account account) {
-        Session session = entityManager.unwrap(Session.class);
-        session.update(account);
+        entityManager.merge(account);
         return findById(account.getId());
     }
 }
