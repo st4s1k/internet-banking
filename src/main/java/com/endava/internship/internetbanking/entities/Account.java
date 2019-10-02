@@ -17,7 +17,8 @@ public class Account {
     @Column(name = "funds")
     private BigDecimal funds;
 
-    @Column(name = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     public Account() {
