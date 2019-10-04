@@ -29,15 +29,14 @@ public class InternetBankingUserServiceTest {
 
     @Test
     public void testCreateUser() {
-        Optional<User> mockUser = Optional.of(User.builder().setId(12L).setName("Stanislav Gîrlea").build());
+        Optional<User> mockUser = Optional.of(new User(12L, "Test User"));
         when(userRepository.save(null)).thenReturn(mockUser);
         assertEquals(userRepository.save(null), mockUser);
     }
 
     @Test
     public void testFindUserById() {
-        Optional<User> optMockUser = Optional.of(User.builder()
-                .setId(1L).setName("Stanislav Gîrlea").build());
+        Optional<User> optMockUser = Optional.of(new User(1L, "Boring User"));
         when(userRepository.findById(1L)).thenReturn(optMockUser);
         Optional<User> optFoundUser = userService.findById(1L);
         assertTrue(optFoundUser.isPresent());

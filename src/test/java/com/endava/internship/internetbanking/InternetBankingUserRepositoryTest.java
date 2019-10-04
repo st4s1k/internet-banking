@@ -25,7 +25,7 @@ public class InternetBankingUserRepositoryTest {
 
     @Test
     public void testCreateAndRetrieveUser() {
-        User user = User.builder().setName("Mock User").build();
+        User user = new User("Mock User");
 
         Optional<User> optSavedUser = userRepository.save(user);
         assertTrue(optSavedUser.isPresent());

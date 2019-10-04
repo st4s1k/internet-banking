@@ -27,7 +27,7 @@ public class InternetBankingControllersTest {
 
     @Test
     public void testCreateRetrieveUser() throws Exception {
-        User mockUser = User.builder().setName("Bob Marley").build();
+        User mockUser = new User("Bob Marley");
         String jsonUser = new Gson().toJson(mockUser);
         mockMvc.perform(put("/users")
                 .contentType(MediaType.APPLICATION_JSON)
