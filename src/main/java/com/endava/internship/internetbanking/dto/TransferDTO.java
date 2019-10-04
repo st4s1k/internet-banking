@@ -1,41 +1,21 @@
 package com.endava.internship.internetbanking.dto;
 
-import javax.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
+@Data
+@AllArgsConstructor
 public class TransferDTO {
 
-    @NotNull
-    private Long sourceId;
+    @NotNull(message = "${http.transfer_operation.fail.bad_current_account}")
+    private Long currentAccountId;
 
-    @NotNull
-    private Long destinationId;
+    @NotNull(message = "${http.transfer_operation.fail.bad_target_account}")
+    private Long targetAccountId;
 
-    @NotEmpty
+    @NotNull(message = "${http.transfer_operation.fail.bad_transfer_amount}")
     private BigDecimal funds;
-
-    public Long getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(Long sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    public Long getDestinationId() {
-        return destinationId;
-    }
-
-    public void setDestinationId(Long destinationId) {
-        this.destinationId = destinationId;
-    }
-
-    public BigDecimal getFunds() {
-        return funds;
-    }
-
-    public void setFunds(BigDecimal funds) {
-        this.funds = funds;
-    }
 }
