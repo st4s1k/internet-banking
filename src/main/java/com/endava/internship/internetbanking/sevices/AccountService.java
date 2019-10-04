@@ -17,8 +17,7 @@ public class AccountService {
     private AccountRepository accountRepository;
 
     public Optional<Account> createAccount(@NonNull User user) {
-        Account accountToBeCreated = Account.builder().setUser(user).build();
-        return accountRepository.save(accountToBeCreated);
+        return accountRepository.save(new Account(user));
     }
 
     public Optional<Account> update(@NonNull Account account) {

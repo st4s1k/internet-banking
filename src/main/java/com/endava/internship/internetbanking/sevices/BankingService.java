@@ -1,78 +1,104 @@
 package com.endava.internship.internetbanking.sevices;
 
 import com.endava.internship.internetbanking.entities.Account;
+import com.endava.internship.internetbanking.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
 public class BankingService {
 
+    @Value("exception.transfer.bad.source.id")
+    private String badSourceIdMessage;
+
+    @Value("exception.transfer.bad.destination.id")
+    private String badDestinationIdMessage;
+
     @Autowired
     private AccountService accountService;
 
-    public void topUp(Account source,
-                      Account destination,
-                      BigDecimal funds) {
-        transfer(source, destination, funds);
+    public static double ALLOWED_TRANSFER_QUOTE = 40d / 100d;
+    public static BigDecimal MINIMAL_TRANSFER_AMOUNT = BigDecimal.TEN;
+
+    public void topUp(Long currentAccountId,
+                      Long targetAccountId,
+                      BigDecimal funds)
+            throws
+            InvalidSourceAccountException,
+            InvalidDestinationAccountException,
+            TransferQuoteExceededException,
+            InsufficientTransferFundsException,
+            InsufficientSourceFundsException {
+
+        transfer(currentAccountId, targetAccountId, funds);
     }
 
-    public void topUp(Long sourceId,
-                      Long destinationId,
-                      BigDecimal funds) {
-        transfer(sourceId, destinationId, funds);
+    public void drawDown(Long currentAccountId,
+                         Long targetAccountId,
+                         BigDecimal funds)
+            throws
+            InvalidSourceAccountException,
+            InvalidDestinationAccountException,
+            TransferQuoteExceededException,
+            InsufficientTransferFundsException,
+            InsufficientSourceFundsException {
+
+        transfer(targetAccountId, currentAccountId, funds);
     }
 
-    public void drawDown(Account source,
-                         Account destination,
-                         BigDecimal funds) {
-        transfer(destination, source, funds);
-    }
+    private void transfer(Long sourceId,
+                          Long destinationId,
+                          BigDecimal funds)
+            throws
+            InvalidSourceAccountException,
+            InvalidDestinationAccountException,
+            TransferQuoteExceededException,
+            InsufficientTransferFundsException,
+            InsufficientSourceFundsException {
 
-    public void drawDown(Long sourceId,
-                         Long destinationId,
-                         BigDecimal funds) {
-        transfer(destinationId, sourceId, funds);
-    }
-
-    public void transfer(Long sourceId,
-                         Long destinationId,
-                         BigDecimal funds) {
         Optional<Account> source = accountService.findById(sourceId);
         Optional<Account> destination = accountService.findById(destinationId);
         if (!source.isPresent()) {
-            throw new IllegalArgumentException("Account source with given ID does not exist."
+            throw new InvalidSourceAccountException(badSourceIdMessage
                     + " [id: " + sourceId + "]");
         } else if (!destination.isPresent()) {
-            throw new IllegalArgumentException("Account destination with given ID does not exist."
+            throw new InvalidDestinationAccountException(badDestinationIdMessage
                     + " [id: " + destinationId + "]");
         } else {
             transfer(source.get(), destination.get(), funds);
         }
     }
 
+    @Transactional
     private void transfer(Account source,
                           Account destination,
-                          BigDecimal funds) {
-        
-        Account newSource = Account.builder()
-                .setId(source.getId())
-                .setFunds(source.getFunds().subtract(funds))
-                .setUser(source.getUser())
-                .build();
+                          BigDecimal funds)
+            throws
+            TransferQuoteExceededException,
+            InsufficientTransferFundsException,
+            InsufficientSourceFundsException {
 
-        Account newDestination = Account.builder()
-                .setId(destination.getId())
-                .setFunds(destination.getFunds().add(funds))
-                .setUser(destination.getUser())
-                .build();
-
-        if (!accountService.update(newSource).isPresent()
-                || !accountService.update(newDestination).isPresent()) {
-            accountService.update(source);
-            accountService.update(destination);
+        if (funds.compareTo(MINIMAL_TRANSFER_AMOUNT) < 0) {
+            throw new InsufficientTransferFundsException();
         }
+
+        if (source.getFunds().compareTo(funds) < 0) {
+            throw new InsufficientSourceFundsException();
+        }
+
+        if (funds.doubleValue() / source.getFunds().doubleValue() > ALLOWED_TRANSFER_QUOTE) {
+            throw new TransferQuoteExceededException();
+        }
+
+        source.setFunds(source.getFunds().subtract(funds));
+        destination.setFunds(destination.getFunds().add(funds));
+
+        accountService.update(source);
+        accountService.update(destination);
     }
 }

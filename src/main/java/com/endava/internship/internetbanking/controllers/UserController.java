@@ -17,14 +17,14 @@ import java.util.Optional;
 @RequestMapping("/users")
 public class UserController {
 
-    @Value("user.creation.success")
-    private String userCreationSuccess;
+    @Value("${http.user_creation.success}")
+    private String userCreationSuccessResponse;
 
-    @Value("user.creation.fail")
-    private String userCreationFail;
+    @Value("${http.user_creation.fail}")
+    private String userCreationFailResponse;
 
-    @Value("user.creation.fail.existing.username")
-    private String userCreationFailExistingUsername;
+    @Value("${http.user_creation.fail.existing_username}")
+    private String userCreationFailExistingUsernameResponse;
 
     @Autowired
     private UserService userService;
@@ -33,28 +33,27 @@ public class UserController {
     public ResponseEntity getAllUsers() {
         List<User> users = userService.findAll();
         return users.isEmpty()
-                ? ResponseEntity.ok(users)
-                : ResponseEntity.noContent().build();
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(users);
     }
 
     @PutMapping
-    public ResponseEntity createUser(@RequestBody @Valid UserDTO userDTO) {
+    public ResponseEntity createUser(@RequestBody @Valid UserDTO dto) {
 
-        Optional<User> user = userService.findByName(userDTO.getName());
+        Optional<User> user = userService.findByName(dto.getName());
 
         if (user.isPresent()) {
-            return ResponseEntity.badRequest().body(userCreationFailExistingUsername);
+            return ResponseEntity.badRequest().body(userCreationFailExistingUsernameResponse);
         }
 
-        User userToBeCreated = User.builder()
-                .setName(userDTO.getName())
-                .build();
+        User userToBeCreated = new User();
+        userToBeCreated.setName(dto.getName());
 
         Optional<User> createdUser = userService.createUser(userToBeCreated);
 
         return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
-                ? ResponseEntity.ok(userCreationSuccess + " [username: " + userDTO.getName() + "]")
+                ? ResponseEntity.ok(createdUser.get().dto())
                 : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(userCreationFail + " [username: " + userDTO.getName() + "]");
+                .body(userCreationFailResponse + " [username: " + dto.getName() + "]");
     }
 }

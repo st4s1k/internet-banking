@@ -1,6 +1,7 @@
 package com.endava.internship.internetbanking.controllers;
 
 import com.endava.internship.internetbanking.dto.TransferDTO;
+import com.endava.internship.internetbanking.exceptions.*;
 import com.endava.internship.internetbanking.sevices.BankingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,47 +12,62 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.util.Optional;
-import java.util.function.Consumer;
 
 @RestController
 @RequestMapping("/banking")
 public class BankingController {
 
-    @Value("transfer.operation.success")
-    private String transferOperationSuccess;
+    @Value("${http.transfer_operation.success}")
+    private String transferOperationSuccessResponse;
 
-    @Value("transfer.operation.fail.bad.source")
-    private String transferOperationFailBadSource;
+    @Value("${http.transfer_operation.fail.bad_current_account}")
+    private String currentAccountNotFoundResponse;
 
-    @Value("transfer.operation.fail.bad.destination")
-    private String transferOperationFailBadDestination;
+    @Value("${http.transfer_operation.fail.bad_target_account}")
+    private String targetAccountNotFoundResponse;
+
+    @Value("${http.transfer_operation.fail.bad_transfer_amount}")
+    private String badTransferAmountResponse;
+
+    @Value("${http.transfer_operation.fail.insufficient_funds}")
+    private String insufficientFundsResponse;
 
     @Autowired
     private BankingService bankingService;
 
     @PutMapping("/topup")
-    public ResponseEntity topUp(@Valid @RequestBody TransferDTO transferDTO) {
-
-        return transfer(transferDTO, dto -> bankingService.topUp(
-                dto.getSourceId(), dto.getDestinationId(), dto.getFunds()));
+    public ResponseEntity topUp(@Valid @RequestBody TransferDTO dto) {
+        ResponseEntity response;
+        try {
+            bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
+            response = ResponseEntity.ok(transferOperationSuccessResponse);
+        } catch (InvalidDestinationAccountException e) {
+            response = ResponseEntity.badRequest().body(targetAccountNotFoundResponse);
+        } catch (InvalidSourceAccountException e) {
+            response = ResponseEntity.badRequest().body(currentAccountNotFoundResponse);
+        } catch (TransferQuoteExceededException | InsufficientTransferFundsException e) {
+            response = ResponseEntity.badRequest().body(badTransferAmountResponse);
+        } catch (InsufficientSourceFundsException e) {
+            response = ResponseEntity.badRequest().body(insufficientFundsResponse);
+        }
+        return response;
     }
 
     @PutMapping("/drawdown")
-    public ResponseEntity drawDown(@Valid @RequestBody TransferDTO transferDTO) {
-        return transfer(transferDTO, dto -> bankingService.drawDown(
-                dto.getSourceId(), dto.getDestinationId(), dto.getFunds()));
-    }
-
-    private ResponseEntity transfer(TransferDTO transferDTO, Consumer<TransferDTO> operation) {
-        return Optional.ofNullable(transferDTO.getSourceId())
-                .map(src -> Optional.ofNullable(transferDTO.getDestinationId())
-                        .map(dst -> {
-                            operation.accept(transferDTO);
-                            return ResponseEntity.ok(transferOperationSuccess);
-                        }).orElse(ResponseEntity.badRequest()
-                                .body(transferOperationFailBadDestination)))
-                .orElse(ResponseEntity.badRequest()
-                        .body(transferOperationFailBadSource));
+    public ResponseEntity drawDown(@Valid @RequestBody TransferDTO dto) {
+        ResponseEntity response;
+        try {
+            bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
+            response = ResponseEntity.ok(transferOperationSuccessResponse);
+        } catch (InvalidSourceAccountException e) {
+            response = ResponseEntity.badRequest().body(targetAccountNotFoundResponse);
+        } catch (InvalidDestinationAccountException e) {
+            response = ResponseEntity.badRequest().body(currentAccountNotFoundResponse);
+        } catch (TransferQuoteExceededException | InsufficientTransferFundsException e) {
+            response = ResponseEntity.badRequest().body(badTransferAmountResponse);
+        } catch (InsufficientSourceFundsException e) {
+            response = ResponseEntity.badRequest().body(insufficientFundsResponse);
+        }
+        return response;
     }
 }
