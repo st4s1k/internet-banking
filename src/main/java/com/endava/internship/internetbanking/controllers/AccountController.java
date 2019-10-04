@@ -1,59 +1,65 @@
 package com.endava.internship.internetbanking.controllers;
 
+import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.dto.AccountDTO;
-import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.entities.User;
-import com.endava.internship.internetbanking.sevices.AccountService;
-import com.endava.internship.internetbanking.sevices.UserService;
+import com.endava.internship.internetbanking.services.AccountService;
+import com.endava.internship.internetbanking.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.EXPECTATION_FAILED;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @RestController
 @RequestMapping("/accounts")
 public class AccountController {
 
-    @Value("${http.account_creation.fail}")
-    private String accountCreationFail;
-
-    @Value("${http.account_creation.fail.bad_user}")
-    private String accountCreationFailBadUser;
-
-    @Autowired
     private AccountService accountService;
+    private UserService userService;
+    private Messages.Http.Account msg;
 
     @Autowired
-    private UserService userService;
+    public AccountController(AccountService accountService,
+                             UserService userService,
+                             Messages msg) {
+        this.accountService = accountService;
+        this.userService = userService;
+        this.msg = msg.http.account;
+    }
 
     @GetMapping
     public ResponseEntity getAllAccounts() {
-        List<Account> accounts = accountService.findAll();
+        List<com.endava.internship.internetbanking.entities.Account> accounts = accountService.findAll();
         return accounts.isEmpty()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(accounts);
     }
 
     @PutMapping
-    public ResponseEntity createAccount(@RequestBody AccountDTO dto) {
+    // TODO: add validation on request
+    public ResponseEntity createAccount(@RequestBody @Valid AccountDTO dto) {
 
         Optional<User> accountOwner = userService.findById(dto.getUserId());
-        Optional<Account> createdAccount = accountOwner.flatMap(user ->
+
+        Optional<com.endava.internship.internetbanking.entities.Account> createdAccount = accountOwner.flatMap(user ->
                 accountService.createAccount(user));
 
         ResponseEntity response;
         if (!accountOwner.isPresent()) {
-            response = ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(accountCreationFailBadUser + " user id: " + dto.getUserId());
+            // TODO: choose a better code
+            response = ResponseEntity.status(EXPECTATION_FAILED)
+                    .body(msg.creation.userNotFound + " user id: " + dto.getUserId());
         } else if (!createdAccount.isPresent()) {
-            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(accountCreationFail);
+            response = ResponseEntity.status(INTERNAL_SERVER_ERROR)
+                    .body(msg.creation.fail);
         } else {
-            response = ResponseEntity.ok(createdAccount.get().dto());
+            response = ResponseEntity.ok(createdAccount.get().dto()); // msg.accountCreation.success
         }
         return response;
     }

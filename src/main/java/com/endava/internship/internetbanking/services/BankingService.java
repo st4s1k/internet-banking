@@ -1,9 +1,9 @@
-package com.endava.internship.internetbanking.sevices;
+package com.endava.internship.internetbanking.services;
 
+import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -13,17 +13,19 @@ import java.util.Optional;
 @Service
 public class BankingService {
 
-    @Value("exception.transfer.bad.source.id")
-    private String badSourceIdMessage;
-
-    @Value("exception.transfer.bad.destination.id")
-    private String badDestinationIdMessage;
-
-    @Autowired
     private AccountService accountService;
 
-    public static double ALLOWED_TRANSFER_QUOTE = 40d / 100d;
+    private Messages.Exceptions.Transfer msg;
+
+    public static double ALLOWED_TRANSFER_QUOTE = .4;
     public static BigDecimal MINIMAL_TRANSFER_AMOUNT = BigDecimal.TEN;
+
+    @Autowired
+    public BankingService(AccountService accountService,
+                          Messages msg) {
+        this.accountService = accountService;
+        this.msg = msg.exceptions.transfer;
+    }
 
     public void topUp(Long currentAccountId,
                       Long targetAccountId,
@@ -64,10 +66,10 @@ public class BankingService {
         Optional<Account> source = accountService.findById(sourceId);
         Optional<Account> destination = accountService.findById(destinationId);
         if (!source.isPresent()) {
-            throw new InvalidSourceAccountException(badSourceIdMessage
+            throw new InvalidSourceAccountException(msg.badDestinationId
                     + " [id: " + sourceId + "]");
         } else if (!destination.isPresent()) {
-            throw new InvalidDestinationAccountException(badDestinationIdMessage
+            throw new InvalidDestinationAccountException(msg.badDestinationId
                     + " [id: " + destinationId + "]");
         } else {
             transfer(source.get(), destination.get(), funds);

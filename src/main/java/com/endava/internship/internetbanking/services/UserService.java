@@ -1,4 +1,4 @@
-package com.endava.internship.internetbanking.sevices;
+package com.endava.internship.internetbanking.services;
 
 import com.endava.internship.internetbanking.entities.User;
 import com.endava.internship.internetbanking.repositories.UserRepository;
@@ -13,8 +13,12 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public Optional<User> createUser(@NonNull User user) {
         return userRepository.save(user);

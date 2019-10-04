@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -20,11 +21,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
+@AutoConfigureMockMvc
 public class InternetBankingControllersTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+
+    //use rest assured to make http calls
     @Test
     public void testCreateRetrieveUser() throws Exception {
         User mockUser = new User("Bob Marley");
@@ -32,7 +36,7 @@ public class InternetBankingControllersTest {
         mockMvc.perform(put("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonUser))
-                .andExpect(status().isCreated());
+                .andExpect(content().json(jsonUser));
         mockMvc.perform(get("/users")).andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(content().string(containsString("")));

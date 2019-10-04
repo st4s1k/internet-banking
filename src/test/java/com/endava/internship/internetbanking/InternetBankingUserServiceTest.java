@@ -2,7 +2,7 @@ package com.endava.internship.internetbanking;
 
 import com.endava.internship.internetbanking.entities.User;
 import com.endava.internship.internetbanking.repositories.UserRepository;
-import com.endava.internship.internetbanking.sevices.UserService;
+import com.endava.internship.internetbanking.services.UserService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
