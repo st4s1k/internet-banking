@@ -1,0 +1,28 @@
+messages:
+  # HTTP response messages
+  http:
+    # User controller messages
+    user:
+      creation:
+        success: User successfully created
+        fail: Failed to create user
+        fail-existing-username: Failed to create user
+    # Account controller messages
+    account:
+      creation:
+        success: Account for user successfully created
+        fail: Account creation failed
+        user-not-found: Could not create a new account for specified user
+    # Banking controller messages
+    transfer:
+      success: Operation executed successfully
+      current-account-not-found: Could not define current account
+      target-account-not-found: Could not define target account
+      invalid-transfer-amount: Invalid transfer amount
+      insufficient-funds: Current account has insufficient funds for transfer
+  # Exceptions
+  exceptions:
+    #Banking service messages
+    transfer:
+      bad-source-id: Current account with given ID does not exist
+      bad-destination-id: Target account with given ID does not exist
