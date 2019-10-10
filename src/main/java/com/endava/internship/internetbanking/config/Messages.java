@@ -50,8 +50,12 @@ public class Messages {
             public String success;
             public String currentAccountNotFound;
             public String targetAccountNotFound;
+            public String currentAccountNull;
+            public String targetAccountNull;
             public String invalidTransferAmount;
             public String insufficientFunds;
+            public String transferObjectNull;
+            public String transferAmountNull;
         }
     }
 

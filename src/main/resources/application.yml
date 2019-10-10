@@ -6,7 +6,7 @@ messages:
       creation:
         success: User successfully created
         fail: Failed to create user
-        fail-existing-username: Failed to create user
+        fail-existing-username: User with this name already exists
     # Account controller messages
     account:
       creation:
@@ -15,14 +15,28 @@ messages:
         user-not-found: Could not create a new account for specified user
     # Banking controller messages
     transfer:
-      success: Operation executed successfully
+      transfer-object-null: Transfer object is null
       current-account-not-found: Could not define current account
       target-account-not-found: Could not define target account
+      current-account-null: Null value not allowed for current account
+      target-account-null: Null value not allowed for target account
+      transfer-amount-null: Null value not allowed for transfer amount
       invalid-transfer-amount: Invalid transfer amount
-      insufficient-funds: Current account has insufficient funds for transfer
+      insufficient-funds: Source account has insufficient funds for transfer
+      success: Operation executed successfully
   # Exceptions
   exceptions:
     #Banking service messages
     transfer:
       bad-source-id: Current account with given ID does not exist
       bad-destination-id: Target account with given ID does not exist
+# Controller endpoints
+endpoints:
+  users:
+    url: "/users"
+  accounts:
+    url: "/accounts"
+  banking:
+    url: "/banking"
+    top-up: "/topup"
+    draw-down: "/drawdown"

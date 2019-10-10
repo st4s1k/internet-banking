@@ -5,20 +5,23 @@ import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import javax.transaction.Transactional;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
 public class BankingService {
 
-    private AccountService accountService;
+    private final AccountService accountService;
 
-    private Messages.Exceptions.Transfer msg;
+    private final Messages.Exceptions.Transfer msg;
 
-    public static double ALLOWED_TRANSFER_QUOTE = .4;
-    public static BigDecimal MINIMAL_TRANSFER_AMOUNT = BigDecimal.TEN;
+    private static final BigDecimal _100_PERCENT_ = new BigDecimal(100);
+    public static final BigDecimal ALLOWED_TRANSFER_QUOTA = new BigDecimal(40);
+    public static final BigDecimal MINIMUM_TRANSFER_AMOUNT = new BigDecimal(10);
 
     @Autowired
     public BankingService(AccountService accountService,
@@ -27,13 +30,21 @@ public class BankingService {
         this.msg = msg.exceptions.transfer;
     }
 
+    @Validated
+    public boolean transferQuotaExceeded(@NotNull Account account,
+                                         @NotNull BigDecimal funds) {
+        return funds.divide(account.getFunds(), BigDecimal.ROUND_FLOOR)
+                .multiply(_100_PERCENT_)
+                .compareTo(ALLOWED_TRANSFER_QUOTA) > 0;
+    }
+
     public void topUp(Long currentAccountId,
                       Long targetAccountId,
                       BigDecimal funds)
             throws
             InvalidSourceAccountException,
             InvalidDestinationAccountException,
-            TransferQuoteExceededException,
+            TransferQuotaExceededException,
             InsufficientTransferFundsException,
             InsufficientSourceFundsException {
 
@@ -46,7 +57,7 @@ public class BankingService {
             throws
             InvalidSourceAccountException,
             InvalidDestinationAccountException,
-            TransferQuoteExceededException,
+            TransferQuotaExceededException,
             InsufficientTransferFundsException,
             InsufficientSourceFundsException {
 
@@ -59,7 +70,7 @@ public class BankingService {
             throws
             InvalidSourceAccountException,
             InvalidDestinationAccountException,
-            TransferQuoteExceededException,
+            TransferQuotaExceededException,
             InsufficientTransferFundsException,
             InsufficientSourceFundsException {
 
@@ -68,24 +79,27 @@ public class BankingService {
         if (!source.isPresent()) {
             throw new InvalidSourceAccountException(msg.badDestinationId
                     + " [id: " + sourceId + "]");
-        } else if (!destination.isPresent()) {
+        }
+        if (!destination.isPresent()) {
             throw new InvalidDestinationAccountException(msg.badDestinationId
                     + " [id: " + destinationId + "]");
-        } else {
-            transfer(source.get(), destination.get(), funds);
         }
+
+        transfer(source.get(), destination.get(), funds);
+
     }
 
+    @Validated
     @Transactional
-    private void transfer(Account source,
-                          Account destination,
-                          BigDecimal funds)
+    public void transfer(@NotNull Account source,
+                         @NotNull Account destination,
+                         @NotNull BigDecimal funds)
             throws
-            TransferQuoteExceededException,
+            TransferQuotaExceededException,
             InsufficientTransferFundsException,
             InsufficientSourceFundsException {
 
-        if (funds.compareTo(MINIMAL_TRANSFER_AMOUNT) < 0) {
+        if (funds.compareTo(MINIMUM_TRANSFER_AMOUNT) < 0) {
             throw new InsufficientTransferFundsException();
         }
 
@@ -93,8 +107,8 @@ public class BankingService {
             throw new InsufficientSourceFundsException();
         }
 
-        if (funds.doubleValue() / source.getFunds().doubleValue() > ALLOWED_TRANSFER_QUOTE) {
-            throw new TransferQuoteExceededException();
+        if (transferQuotaExceeded(source, funds)) {
+            throw new TransferQuotaExceededException();
         }
 
         source.setFunds(source.getFunds().subtract(funds));

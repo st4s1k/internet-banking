@@ -26,6 +26,13 @@ public class User {
     @Column(name = "name")
     private String name;
 
+    public static User from(@NonNull UserDTO userDTO) {
+        return User.builder()
+                .id(userDTO.getId())
+                .name(userDTO.getName())
+                .build();
+    }
+
     public UserDTO dto() {
         return new UserDTO(id, name);
     }

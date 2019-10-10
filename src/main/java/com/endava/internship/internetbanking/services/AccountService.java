@@ -13,7 +13,7 @@ import java.util.Optional;
 @Service
 public class AccountService {
 
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     @Autowired
     public AccountService(AccountRepository accountRepository) {
@@ -42,5 +42,9 @@ public class AccountService {
 
     public List<Account> findByUser(@NonNull User user) {
         return accountRepository.findByUser(user);
+    }
+
+    public List<Account> findByUserId(@NonNull Long id) {
+        return accountRepository.findByUserId(id);
     }
 }

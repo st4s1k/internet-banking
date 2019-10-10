@@ -40,8 +40,17 @@ public class AccountRepository {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Account> query = criteriaBuilder.createQuery(Account.class);
         Root<Account> from = query.from(Account.class);
-        Predicate userId = criteriaBuilder.equal(from.get("user_id"), user.getId());
-        query.where(userId);
+        Predicate userIdCriteria = criteriaBuilder.equal(from.get("user_id"), user.getId());
+        query.where(userIdCriteria);
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    public List<Account> findByUserId(Long userId) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Account> query = criteriaBuilder.createQuery(Account.class);
+        Root<Account> from = query.from(Account.class);
+        Predicate userIdCriteria = criteriaBuilder.equal(from.get("user_id"), userId);
+        query.where(userIdCriteria);
         return entityManager.createQuery(query).getResultList();
     }
 

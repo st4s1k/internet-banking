@@ -1,24 +1,30 @@
 package com.endava.internship.internetbanking.controllers;
 
+import com.endava.internship.internetbanking.beans.ResponseBean;
 import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.dto.TransferDTO;
-import com.endava.internship.internetbanking.exceptions.*;
 import com.endava.internship.internetbanking.services.BankingService;
+import com.endava.internship.internetbanking.validation.annotations.Transfer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 
+import static com.endava.internship.internetbanking.enums.TransferType.DRAW_DOWN;
+import static com.endava.internship.internetbanking.enums.TransferType.TOP_UP;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.OK;
+
+@Validated
 @RestController
-@RequestMapping("/banking")
+@RequestMapping("${endpoints.banking.url}")
 public class BankingController {
 
-    private BankingService bankingService;
-    private Messages.Http.Transfer msg;
+    private final BankingService bankingService;
+    private final Messages.Http.Transfer msg;
 
     @Autowired
     public BankingController(BankingService bankingService,
@@ -27,40 +33,32 @@ public class BankingController {
         this.msg = msg.http.transfer;
     }
 
-    @PutMapping("/topup")
-    public ResponseEntity topUp(@Valid @RequestBody TransferDTO dto) {
-        ResponseEntity response;
-        try {
-            // FIXME rewrite without throwing exceptions
-            bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-            response = ResponseEntity.ok(msg.success);
-        } catch (InvalidDestinationAccountException e) {
-            response = ResponseEntity.badRequest().body(msg.targetAccountNotFound);
-        } catch (InvalidSourceAccountException e) {
-            response = ResponseEntity.badRequest().body(msg.currentAccountNotFound);
-        } catch (TransferQuoteExceededException | InsufficientTransferFundsException e) {
-            response = ResponseEntity.badRequest().body(msg.invalidTransferAmount);
-        } catch (InsufficientSourceFundsException e) {
-            response = ResponseEntity.badRequest().body(msg.insufficientFunds);
-        }
-        return response;
+    @PutMapping("${endpoints.banking.top-up}")
+    public ResponseEntity topUp(@Transfer(TOP_UP)
+                                @RequestBody TransferDTO dto) {
+        bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
+        return ResponseEntity.ok(ResponseBean.from(OK, msg.success));
     }
 
-    @PutMapping("/drawdown")
-    public ResponseEntity drawDown(@Valid @RequestBody TransferDTO dto) {
-        ResponseEntity response;
-        try {
-            bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-            response = ResponseEntity.ok(msg.success);
-        } catch (InvalidDestinationAccountException e) {
-            response = ResponseEntity.badRequest().body(msg.currentAccountNotFound);
-        } catch (InvalidSourceAccountException e) {
-            response = ResponseEntity.badRequest().body(msg.targetAccountNotFound);
-        } catch (TransferQuoteExceededException | InsufficientTransferFundsException e) {
-            response = ResponseEntity.badRequest().body(msg.invalidTransferAmount);
-        } catch (InsufficientSourceFundsException e) {
-            response = ResponseEntity.badRequest().body(msg.insufficientFunds);
-        }
-        return response;
+    @PutMapping("${endpoints.banking.draw-down}")
+    public ResponseEntity drawDown(@Transfer(DRAW_DOWN)
+                                   @RequestBody TransferDTO dto) {
+        bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
+        return ResponseEntity.ok(ResponseBean.from(OK, msg.success));
+    }
+
+    @ExceptionHandler({ConstraintViolationException.class})
+    public ResponseEntity handleConstraintViolationException(ConstraintViolationException e) {
+
+        ResponseBean.ResponseBeanBuilder response = ResponseBean.builder();
+
+        String[] violations = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .toArray(String[]::new);
+
+        response.status(BAD_REQUEST.value())
+                .message(violations);
+
+        return ResponseEntity.badRequest().body(response.build());
     }
 }

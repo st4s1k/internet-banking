@@ -1,5 +1,6 @@
 package com.endava.internship.internetbanking.controllers;
 
+import com.endava.internship.internetbanking.beans.ResponseBean;
 import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.dto.AccountDTO;
 import com.endava.internship.internetbanking.entities.User;
@@ -13,16 +14,15 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.http.HttpStatus.EXPECTATION_FAILED;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("${endpoints.accounts.url}")
 public class AccountController {
 
-    private AccountService accountService;
-    private UserService userService;
-    private Messages.Http.Account msg;
+    private final AccountService accountService;
+    private final UserService userService;
+    private final Messages.Http.Account msg;
 
     @Autowired
     public AccountController(AccountService accountService,
@@ -38,28 +38,27 @@ public class AccountController {
         List<com.endava.internship.internetbanking.entities.Account> accounts = accountService.findAll();
         return accounts.isEmpty()
                 ? ResponseEntity.noContent().build()
-                : ResponseEntity.ok(accounts);
+                : ResponseEntity.ok(ResponseBean.from(OK, accounts));
     }
 
-    @PutMapping
-    // TODO: add validation on request
+    @PostMapping
     public ResponseEntity createAccount(@RequestBody @Valid AccountDTO dto) {
 
         Optional<User> accountOwner = userService.findById(dto.getUserId());
 
-        Optional<com.endava.internship.internetbanking.entities.Account> createdAccount = accountOwner.flatMap(user ->
-                accountService.createAccount(user));
+        Optional<com.endava.internship.internetbanking.entities.Account> createdAccount =
+                accountOwner.flatMap(accountService::createAccount);
 
         ResponseEntity response;
         if (!accountOwner.isPresent()) {
-            // TODO: choose a better code
             response = ResponseEntity.status(EXPECTATION_FAILED)
-                    .body(msg.creation.userNotFound + " user id: " + dto.getUserId());
+                    .body(ResponseBean.from(EXPECTATION_FAILED, msg.creation.userNotFound, dto));
         } else if (!createdAccount.isPresent()) {
             response = ResponseEntity.status(INTERNAL_SERVER_ERROR)
-                    .body(msg.creation.fail);
+                    .body(ResponseBean.from(INTERNAL_SERVER_ERROR, msg.creation.fail));
         } else {
-            response = ResponseEntity.ok(createdAccount.get().dto()); // msg.accountCreation.success
+            response = ResponseEntity
+                    .ok(ResponseBean.from(OK, msg.creation.success, createdAccount.get().dto()));
         }
         return response;
     }

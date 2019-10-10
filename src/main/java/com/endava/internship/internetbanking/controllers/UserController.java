@@ -1,7 +1,9 @@
 package com.endava.internship.internetbanking.controllers;
 
+import com.endava.internship.internetbanking.beans.ResponseBean;
 import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.dto.UserDTO;
+import com.endava.internship.internetbanking.entities.User;
 import com.endava.internship.internetbanking.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,14 +13,14 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("${endpoints.users.url}")
 public class UserController {
 
-    private UserService userService;
-    private Messages.Http.User msg;
+    private final UserService userService;
+    private final Messages.Http.User msg;
 
     @Autowired
     public UserController(UserService userService,
@@ -29,29 +31,30 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity getAllUsers() {
-        List<com.endava.internship.internetbanking.entities.User> users = userService.findAll();
+        List<User> users = userService.findAll();
         return users.isEmpty()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.ok(users);
     }
 
-    @PutMapping
+    @PostMapping
     public ResponseEntity createUser(@RequestBody @Valid UserDTO dto) {
 
-        Optional<com.endava.internship.internetbanking.entities.User> user = userService.findByName(dto.getName());
+        Optional<User> user = userService.findByName(dto.getName());
 
         if (user.isPresent()) {
-            return ResponseEntity.badRequest().body(msg.creation.failExistingUsername);
+            return ResponseEntity.badRequest()
+                    .body(ResponseBean.from(BAD_REQUEST, msg.creation.failExistingUsername, dto));
         }
 
-        com.endava.internship.internetbanking.entities.User userToBeCreated = new com.endava.internship.internetbanking.entities.User();
+        User userToBeCreated = new User();
         userToBeCreated.setName(dto.getName());
 
-        Optional<com.endava.internship.internetbanking.entities.User> createdUser = userService.createUser(userToBeCreated);
+        Optional<User> createdUser = userService.createUser(userToBeCreated);
 
         return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
-                ? ResponseEntity.ok(createdUser.get().dto()) // msg.userCreation.success
+                ? ResponseEntity.ok(ResponseBean.from(OK, msg.creation.success, createdUser.get().dto()))
                 : ResponseEntity.status(INTERNAL_SERVER_ERROR)
-                .body(msg.creation.fail + " [username: " + dto.getName() + "]");
+                .body(ResponseBean.from(INTERNAL_SERVER_ERROR, msg.creation.fail, dto));
     }
 }
