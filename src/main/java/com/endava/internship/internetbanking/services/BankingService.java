@@ -5,14 +5,15 @@ import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 import javax.transaction.Transactional;
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import static java.math.RoundingMode.FLOOR;
+
 @Service
+@SuppressWarnings("WeakerAccess")
 public class BankingService {
 
     private final AccountService accountService;
@@ -30,10 +31,14 @@ public class BankingService {
         this.msg = msg.exceptions.transfer;
     }
 
-    @Validated
-    public boolean transferQuotaExceeded(@NotNull Account account,
-                                         @NotNull BigDecimal funds) {
-        return funds.divide(account.getFunds(), BigDecimal.ROUND_FLOOR)
+    public boolean transferQuotaExceeded(Account account,
+                                         BigDecimal funds) {
+        return account != null
+                && account.getFunds() != null
+                && funds != null
+                && account.getFunds().compareTo(funds) > 0
+                && funds
+                .divide(account.getFunds(), FLOOR)
                 .multiply(_100_PERCENT_)
                 .compareTo(ALLOWED_TRANSFER_QUOTA) > 0;
     }
@@ -46,7 +51,8 @@ public class BankingService {
             InvalidDestinationAccountException,
             TransferQuotaExceededException,
             InsufficientTransferFundsException,
-            InsufficientSourceFundsException {
+            InsufficientSourceFundsException,
+            TransferFailedException {
 
         transfer(currentAccountId, targetAccountId, funds);
     }
@@ -59,7 +65,8 @@ public class BankingService {
             InvalidDestinationAccountException,
             TransferQuotaExceededException,
             InsufficientTransferFundsException,
-            InsufficientSourceFundsException {
+            InsufficientSourceFundsException,
+            TransferFailedException {
 
         transfer(targetAccountId, currentAccountId, funds);
     }
@@ -72,7 +79,8 @@ public class BankingService {
             InvalidDestinationAccountException,
             TransferQuotaExceededException,
             InsufficientTransferFundsException,
-            InsufficientSourceFundsException {
+            InsufficientSourceFundsException,
+            TransferFailedException {
 
         Optional<Account> source = accountService.findById(sourceId);
         Optional<Account> destination = accountService.findById(destinationId);
@@ -89,15 +97,15 @@ public class BankingService {
 
     }
 
-    @Validated
     @Transactional
-    public void transfer(@NotNull Account source,
-                         @NotNull Account destination,
-                         @NotNull BigDecimal funds)
+    public void transfer(Account source,
+                         Account destination,
+                         BigDecimal funds)
             throws
             TransferQuotaExceededException,
             InsufficientTransferFundsException,
-            InsufficientSourceFundsException {
+            InsufficientSourceFundsException,
+            TransferFailedException {
 
         if (funds.compareTo(MINIMUM_TRANSFER_AMOUNT) < 0) {
             throw new InsufficientTransferFundsException();
@@ -114,7 +122,15 @@ public class BankingService {
         source.setFunds(source.getFunds().subtract(funds));
         destination.setFunds(destination.getFunds().add(funds));
 
-        accountService.update(source);
-        accountService.update(destination);
+        Optional<Account> updSource = accountService.update(source);
+        Optional<Account> updDestination = accountService.update(destination);
+
+        if (!updSource.map(_updSrc -> _updSrc.equals(source)).orElse(false)) {
+            throw new TransferFailedException();
+        }
+
+        if (!updDestination.map(_updDst -> _updDst.equals(destination)).orElse(false)) {
+            throw new TransferFailedException();
+        }
     }
 }
