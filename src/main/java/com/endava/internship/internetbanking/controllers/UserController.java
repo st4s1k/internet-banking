@@ -30,21 +30,23 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity getAllUsers() {
+    public ResponseEntity<ResponseBean> getAllUsers() {
         List<User> users = userService.findAll();
         return users.isEmpty()
                 ? ResponseEntity.noContent().build()
-                : ResponseEntity.ok(users);
+                : ResponseEntity
+                .ok(ResponseBean.builder().status(OK.value()).data(users).build());
     }
 
     @PostMapping
-    public ResponseEntity createUser(@RequestBody @Valid UserDTO dto) {
+    public ResponseEntity<ResponseBean> createUser(@RequestBody @Valid UserDTO dto) {
 
         Optional<User> user = userService.findByName(dto.getName());
 
         if (user.isPresent()) {
             return ResponseEntity.badRequest()
-                    .body(ResponseBean.from(BAD_REQUEST, msg.creation.failExistingUsername, dto));
+                    .body(ResponseBean.builder().status(BAD_REQUEST.value())
+                            .message(msg.creation.failExistingUsername).data(dto).build());
         }
 
         User userToBeCreated = new User();
@@ -53,8 +55,10 @@ public class UserController {
         Optional<User> createdUser = userService.createUser(userToBeCreated);
 
         return createdUser.isPresent() && createdUser.get().equals(userToBeCreated)
-                ? ResponseEntity.ok(ResponseBean.from(OK, msg.creation.success, createdUser.get().dto()))
+                ? ResponseEntity.ok(ResponseBean.builder().status(OK.value())
+                .message(msg.creation.success).data(createdUser.get().dto()).build())
                 : ResponseEntity.status(INTERNAL_SERVER_ERROR)
-                .body(ResponseBean.from(INTERNAL_SERVER_ERROR, msg.creation.fail, dto));
+                .body(ResponseBean.builder().status(INTERNAL_SERVER_ERROR.value())
+                        .message(msg.creation.fail).data(dto).build());
     }
 }

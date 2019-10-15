@@ -34,21 +34,21 @@ public class BankingController {
     }
 
     @PutMapping("${endpoints.banking.top-up}")
-    public ResponseEntity topUp(@Transfer(TOP_UP)
-                                @RequestBody TransferDTO dto) {
+    public ResponseEntity<ResponseBean> topUp(@Transfer(TOP_UP)
+                                              @RequestBody TransferDTO dto) {
         bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-        return ResponseEntity.ok(ResponseBean.from(OK, msg.success));
+        return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
     }
 
     @PutMapping("${endpoints.banking.draw-down}")
-    public ResponseEntity drawDown(@Transfer(DRAW_DOWN)
-                                   @RequestBody TransferDTO dto) {
+    public ResponseEntity<ResponseBean> drawDown(@Transfer(DRAW_DOWN)
+                                                 @RequestBody TransferDTO dto) {
         bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-        return ResponseEntity.ok(ResponseBean.from(OK, msg.success));
+        return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
     }
 
     @ExceptionHandler({ConstraintViolationException.class})
-    public ResponseEntity handleConstraintViolationException(ConstraintViolationException e) {
+    public ResponseEntity<ResponseBean> handleConstraintViolationException(ConstraintViolationException e) {
 
         ResponseBean.ResponseBeanBuilder response = ResponseBean.builder();
 
