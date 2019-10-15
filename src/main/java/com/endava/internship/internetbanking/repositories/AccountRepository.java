@@ -14,8 +14,10 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
+
 @Repository
-@Transactional
+@Transactional(REQUIRES_NEW)
 public class AccountRepository {
 
     @PersistenceContext
@@ -28,12 +30,14 @@ public class AccountRepository {
     }
 
     public Optional<Account> remove(Account account) {
-        entityManager.remove(account);
-        return findById(account.getId());
+        Optional<Account> accountToBeRemoved = findById(account.getId());
+        accountToBeRemoved.ifPresent(_account -> entityManager.remove(
+                entityManager.contains(_account) ? _account : entityManager.merge(_account)));
+        return accountToBeRemoved;
     }
 
     public Optional<Account> findById(Long accountId) {
-        return Optional.of(entityManager.find(Account.class, accountId));
+        return Optional.ofNullable(entityManager.find(Account.class, accountId));
     }
 
     public List<Account> findByUser(User user) {

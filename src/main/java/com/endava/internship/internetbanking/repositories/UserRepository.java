@@ -13,8 +13,10 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
+
 @Repository
-@Transactional
+@Transactional(REQUIRES_NEW)
 public class UserRepository {
 
     @PersistenceContext
@@ -28,7 +30,8 @@ public class UserRepository {
 
     public Optional<User> remove(User user) {
         Optional<User> userToBeRemoved = findById(user.getId());
-        userToBeRemoved.ifPresent(entityManager::remove);
+        userToBeRemoved.ifPresent(_user ->
+                entityManager.remove(entityManager.contains(_user) ? _user : entityManager.merge(_user)));
         return userToBeRemoved;
     }
 
