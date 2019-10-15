@@ -4,7 +4,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class InvalidSourceAccountException extends RuntimeException {
-    public InvalidSourceAccountException(String s) {
-        super(s);
+    public InvalidSourceAccountException(String message) {
+        super(message);
     }
 }

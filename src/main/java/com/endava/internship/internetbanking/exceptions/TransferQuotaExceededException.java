@@ -4,7 +4,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class TransferQuotaExceededException extends RuntimeException {
-    public TransferQuotaExceededException(String s) {
-        super(s);
+    public TransferQuotaExceededException(String message) {
+        super(message);
     }
 }
