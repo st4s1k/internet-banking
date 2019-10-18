@@ -56,6 +56,7 @@ public class Messages {
             public String insufficientFunds;
             public String transferObjectNull;
             public String transferAmountNull;
+            public String fail;
         }
     }
 
@@ -66,8 +67,14 @@ public class Messages {
 
         @Setter
         public static class Transfer {
+            public String invalidTransferAmount;
+            public String insufficientFunds;
+            public String transferObjectNull;
+            public String transferAmountNull;
             public String badSourceId;
             public String badDestinationId;
+            public String loggingFail;
+            public String fail;
         }
     }
 }
