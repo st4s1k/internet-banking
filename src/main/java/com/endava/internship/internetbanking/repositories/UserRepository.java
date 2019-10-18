@@ -1,10 +1,10 @@
 package com.endava.internship.internetbanking.repositories;
 
 import com.endava.internship.internetbanking.entities.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -19,8 +19,12 @@ import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 @Transactional(REQUIRES_NEW)
 public class UserRepository {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
+
+    @Autowired
+    public UserRepository(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
 
     public Optional<User> save(User user) {
         entityManager.persist(user);
