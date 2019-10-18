@@ -1,6 +1,5 @@
 package com.endava.internship.internetbanking.validation.annotations;
 
-import com.endava.internship.internetbanking.enums.TransferType;
 import com.endava.internship.internetbanking.validation.validators.TransferValidator;
 
 import javax.validation.Constraint;
@@ -17,8 +16,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Transfer {
 
     String message() default "Invalid transfer object!";
-
-    TransferType value();
 
     Class<?>[] groups() default {};
 

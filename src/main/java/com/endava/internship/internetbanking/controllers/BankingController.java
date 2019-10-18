@@ -2,7 +2,8 @@ package com.endava.internship.internetbanking.controllers;
 
 import com.endava.internship.internetbanking.beans.ResponseBean;
 import com.endava.internship.internetbanking.config.Messages;
-import com.endava.internship.internetbanking.dto.TransferDTO;
+import com.endava.internship.internetbanking.dto.DrawDownDTO;
+import com.endava.internship.internetbanking.dto.TopUpDTO;
 import com.endava.internship.internetbanking.services.BankingService;
 import com.endava.internship.internetbanking.validation.annotations.Transfer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 
-import static com.endava.internship.internetbanking.enums.TransferType.DRAW_DOWN;
-import static com.endava.internship.internetbanking.enums.TransferType.TOP_UP;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -34,15 +33,13 @@ public class BankingController {
     }
 
     @PutMapping("${endpoints.banking.top-up}")
-    public ResponseEntity<ResponseBean> topUp(@Transfer(TOP_UP)
-                                              @RequestBody TransferDTO dto) {
+    public ResponseEntity<ResponseBean> topUp(@Transfer @RequestBody TopUpDTO dto) {
         bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
         return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
     }
 
     @PutMapping("${endpoints.banking.draw-down}")
-    public ResponseEntity<ResponseBean> drawDown(@Transfer(DRAW_DOWN)
-                                                 @RequestBody TransferDTO dto) {
+    public ResponseEntity<ResponseBean> drawDown(@Transfer @RequestBody DrawDownDTO dto) {
         bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
         return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
     }

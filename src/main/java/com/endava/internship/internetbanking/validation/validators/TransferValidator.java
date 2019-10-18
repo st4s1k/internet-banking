@@ -1,11 +1,10 @@
 package com.endava.internship.internetbanking.validation.validators;
 
 import com.endava.internship.internetbanking.config.Messages;
-import com.endava.internship.internetbanking.dto.TransferDTO;
+import com.endava.internship.internetbanking.dto.ITransferDTO;
 import com.endava.internship.internetbanking.entities.Account;
-import com.endava.internship.internetbanking.enums.TransferType;
 import com.endava.internship.internetbanking.services.AccountService;
-import com.endava.internship.internetbanking.services.BankingService;
+import com.endava.internship.internetbanking.services.TransferService;
 import com.endava.internship.internetbanking.validation.annotations.Transfer;
 
 import javax.validation.ConstraintValidator;
@@ -14,30 +13,24 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
-import static com.endava.internship.internetbanking.services.BankingService.MINIMUM_TRANSFER_AMOUNT;
+import static com.endava.internship.internetbanking.services.TransferService.MINIMUM_TRANSFER_AMOUNT;
 
-public class TransferValidator implements ConstraintValidator<Transfer, TransferDTO> {
+public class TransferValidator implements ConstraintValidator<Transfer, ITransferDTO> {
 
     private Messages.Http.Transfer msg;
-    private BankingService bankingService;
+    private TransferService transferService;
     private AccountService accountService;
-    private TransferType transferType;
 
     public TransferValidator(Messages msg,
-                             BankingService bankingService,
+                             TransferService transferService,
                              AccountService accountService) {
-        this.bankingService = bankingService;
         this.msg = msg.http.transfer;
+        this.transferService = transferService;
         this.accountService = accountService;
     }
 
     @Override
-    public void initialize(Transfer constraintAnnotation) {
-        transferType = constraintAnnotation.value();
-    }
-
-    @Override
-    public boolean isValid(TransferDTO dto, ConstraintValidatorContext context) {
+    public boolean isValid(ITransferDTO dto, ConstraintValidatorContext context) {
         return validate(dto, context,
                 this::dtoNotNull,
                 this::currentAccountIdNotNull,
@@ -51,16 +44,22 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
     }
 
     @SafeVarargs
-    private final boolean validate(TransferDTO dto, ConstraintValidatorContext context,
-                                   BiPredicate<TransferDTO, ConstraintValidatorContext>... constraints) {
+    private final boolean validate(ITransferDTO dto, ConstraintValidatorContext context,
+                                   BiPredicate<ITransferDTO, ConstraintValidatorContext>... constraints) {
         boolean isValid = true;
-        for (BiPredicate<TransferDTO, ConstraintValidatorContext> constraint : constraints) {
+        for (BiPredicate<ITransferDTO, ConstraintValidatorContext> constraint : constraints) {
             isValid &= constraint.test(dto, context);
         }
         return isValid;
     }
 
-    private Optional<Account> getAccount(TransferDTO dto, Supplier<Long> idSupplier) {
+    private Optional<Account> getSourceAccount(ITransferDTO dto) {
+        return Optional.ofNullable(dto)
+                .map(ITransferDTO::getSourceId)
+                .flatMap(accountService::findById);
+    }
+
+    private Optional<Account> getAccount(ITransferDTO dto, Supplier<Long> idSupplier) {
         if (dto == null) {
             return Optional.empty();
         }
@@ -68,29 +67,15 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
                 .flatMap(accountService::findById);
     }
 
-    private Optional<Account> getCurrentAccount(TransferDTO dto) {
+    private Optional<Account> getCurrentAccount(ITransferDTO dto) {
         return getAccount(dto, dto::getCurrentAccountId);
     }
 
-    private Optional<Account> getTargetAccount(TransferDTO dto) {
+    private Optional<Account> getTargetAccount(ITransferDTO dto) {
         return getAccount(dto, dto::getTargetAccountId);
     }
 
-    private Optional<Account> getSourceAccount(TransferDTO dto) {
-        if (dto == null) {
-            return Optional.empty();
-        }
-        switch (transferType) {
-            case TOP_UP:
-                return getCurrentAccount(dto);
-            case DRAW_DOWN:
-                return getTargetAccount(dto);
-            default:
-                return Optional.empty();
-        }
-    }
-
-    private boolean dtoNotNull(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean dtoNotNull(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto == null) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.transferObjectNull)
@@ -100,7 +85,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean currentAccountIdNotNull(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean currentAccountIdNotNull(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto != null && dto.getCurrentAccountId() == null) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.currentAccountNull)
@@ -110,7 +95,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean targetAccountIdNotNull(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean targetAccountIdNotNull(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto != null && dto.getTargetAccountId() == null) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.targetAccountNull)
@@ -120,7 +105,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean currentAccountDoesExist(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean currentAccountDoesExist(ITransferDTO dto, ConstraintValidatorContext context) {
         if (!getCurrentAccount(dto).isPresent()) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.currentAccountNotFound)
@@ -130,7 +115,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean targetAccountDoesExist(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean targetAccountDoesExist(ITransferDTO dto, ConstraintValidatorContext context) {
         if (!getTargetAccount(dto).isPresent()) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.targetAccountNotFound)
@@ -140,7 +125,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean fundsNotNull(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean fundsNotNull(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto != null && dto.getFunds() == null) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(msg.transferAmountNull)
@@ -150,7 +135,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean sufficientSourceFunds(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean sufficientSourceFunds(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto != null && dto.getFunds() != null && getSourceAccount(dto)
                 .map(source -> source.getFunds().compareTo(dto.getFunds()) < 0)
                 .orElse(false)) {
@@ -162,7 +147,7 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean minimumTransferAmountIsMet(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean minimumTransferAmountIsMet(ITransferDTO dto, ConstraintValidatorContext context) {
         if (dto != null && dto.getFunds() != null
                 && dto.getFunds().compareTo(MINIMUM_TRANSFER_AMOUNT) < 0) {
             context.disableDefaultConstraintViolation();
@@ -173,10 +158,10 @@ public class TransferValidator implements ConstraintValidator<Transfer, Transfer
         return true;
     }
 
-    private boolean transferQuotaIsRespected(TransferDTO dto, ConstraintValidatorContext context) {
+    private boolean transferQuotaIsRespected(ITransferDTO dto, ConstraintValidatorContext context) {
         return dto == null || dto.getFunds() == null ||
                 getSourceAccount(dto).map(source -> {
-                    if (source.getFunds() != null && bankingService.transferQuotaExceeded(source, dto.getFunds())) {
+                    if (source.getFunds() != null && transferService.transferQuotaExceeded(source, dto.getFunds())) {
                         context.disableDefaultConstraintViolation();
                         context.buildConstraintViolationWithTemplate(msg.invalidTransferAmount)
                                 .addConstraintViolation();

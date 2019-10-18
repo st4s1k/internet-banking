@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
-public class TransferDTO {
+public class TopUpDTO implements ITransferDTO {
 
     @NotNull
     private Long currentAccountId;
@@ -18,4 +18,14 @@ public class TransferDTO {
 
     @NotNull
     private BigDecimal funds;
+
+    @Override
+    public Long getSourceId() {
+        return getCurrentAccountId();
+    }
+
+    @Override
+    public Long getDestinationId() {
+        return getTargetAccountId();
+    }
 }
