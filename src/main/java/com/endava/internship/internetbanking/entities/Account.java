@@ -25,6 +25,7 @@ public class Account {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "funds")
     @Builder.Default
     private BigDecimal funds = ZERO;
