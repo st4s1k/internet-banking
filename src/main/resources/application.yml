@@ -17,20 +17,6 @@ spring:
           # to new PostgreSQL version     #
           # # # # # # # # # # # # # # # # #
           use_jdbc_metadata_defaults: false
-#  jackson:
-#    property-naming-strategy: SNAKE_CASE
-
-#hibernate:
-#  dialect: org.hibernate.dialect.PostgreSQL10Dialect
-#  connection:
-#    driver_class: com.postgresql.Driver
-#    url: jdbc:postgresql:internetbanking
-#    username: postgres
-#    password: postgres
-#  show-sql: true
-#  format-sql: true
-#  hbm2ddl:
-#    auto: create-drop
 
 messages:
   # HTTP response messages
@@ -49,21 +35,28 @@ messages:
         user-not-found: Could not create a new account for specified user
     # Banking controller messages
     transfer:
-      transfer-object-null: Transfer object is null
       current-account-not-found: Could not define current account
       target-account-not-found: Could not define target account
       current-account-null: Null value not allowed for current account
       target-account-null: Null value not allowed for target account
+      transfer-object-null: Transfer object is null
       transfer-amount-null: Null value not allowed for transfer amount
       invalid-transfer-amount: Invalid transfer amount
       insufficient-funds: Source account has insufficient funds for transfer
-      success: Operation executed successfully
+      success: Transfer operation executed successfully
+      fail: Transfer operation failed
   # Exceptions
   exceptions:
     #Banking service messages
     transfer:
+      transfer-object-null: Transfer object is null
+      transfer-amount-null: Null value not allowed for transfer amount
+      invalid-transfer-amount: Invalid transfer amount
+      insufficient-funds: Source account has insufficient funds for transfer
       bad-source-id: Current account with given ID does not exist
       bad-destination-id: Target account with given ID does not exist
+      logging-fail: Logging failed
+      fail: Transfer operation failed
 # Controller endpoints
 endpoints:
   users:
