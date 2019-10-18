@@ -3,7 +3,8 @@ package com.endava.internship.internetbanking;
 import com.endava.internship.internetbanking.config.Endpoints;
 import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.dto.AccountDTO;
-import com.endava.internship.internetbanking.dto.TransferDTO;
+import com.endava.internship.internetbanking.dto.DrawDownDTO;
+import com.endava.internship.internetbanking.dto.TopUpDTO;
 import com.endava.internship.internetbanking.dto.UserDTO;
 import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.repositories.AccountRepository;
@@ -19,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import javax.transaction.Transactional;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -30,15 +30,13 @@ import static java.math.BigDecimal.TEN;
 import static java.math.BigDecimal.ZERO;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.OK;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@Transactional
-public class InternetBankingControllerIntegrationTests {
+public class InternetBankingIntegrationTests {
 
     private static Set<Long> usersCache = new HashSet<>();
     private static Set<Long> accountsCache = new HashSet<>();
@@ -55,14 +53,14 @@ public class InternetBankingControllerIntegrationTests {
     private Endpoints endpoints;
 
     @Autowired
-    public InternetBankingControllerIntegrationTests(UserRepository userRepository,
-                                                     AccountRepository accountRepository,
-                                                     UserService userService,
-                                                     AccountService accountService,
-                                                     Messages msg,
-                                                     Endpoints endpoints) {
-        InternetBankingControllerIntegrationTests.userRepository = userRepository;
-        InternetBankingControllerIntegrationTests.accountRepository = accountRepository;
+    public InternetBankingIntegrationTests(UserRepository userRepository,
+                                           AccountRepository accountRepository,
+                                           UserService userService,
+                                           AccountService accountService,
+                                           Messages msg,
+                                           Endpoints endpoints) {
+        InternetBankingIntegrationTests.userRepository = userRepository;
+        InternetBankingIntegrationTests.accountRepository = accountRepository;
 
         this.userService = userService;
         this.accountService = accountService;
@@ -106,9 +104,12 @@ public class InternetBankingControllerIntegrationTests {
 
     @Test
     public void userControllerTest() {
+
         String userName = "IT TestUser One";
         Response response = createUser(userName);
         UserDTO createdUserDTO = response.jsonPath().getObject("data", UserDTO.class);
+
+        assertFalse(userService.findByName(userName).isPresent());
 
         response.then().assertThat()
                 .log().all()
@@ -118,6 +119,8 @@ public class InternetBankingControllerIntegrationTests {
                 .body("timestamp", notNullValue())
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.user.creation.success));
+
+        assertTrue(userService.findByName(userName).isPresent());
 
         assertNotNull(createdUserDTO.getId());
         assertEquals(userName, createdUserDTO.getName());
@@ -133,6 +136,8 @@ public class InternetBankingControllerIntegrationTests {
         AccountDTO createdAccountDTO = response.getBody().jsonPath()
                 .getObject("data", AccountDTO.class);
 
+        assertTrue(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
+
         response.then()
                 .log().all()
                 .assertThat()
@@ -142,6 +147,8 @@ public class InternetBankingControllerIntegrationTests {
                 .body("timestamp", notNullValue())
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.account.creation.success));
+
+        assertFalse(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
 
         assertNotNull(createdAccountDTO.getId());
         assertEquals(ZERO, createdAccountDTO.getFunds());
@@ -166,14 +173,14 @@ public class InternetBankingControllerIntegrationTests {
         AccountDTO createdTargetAccountDTO = response.getBody().jsonPath()
                 .getObject("data", AccountDTO.class);
 
-        TransferDTO transferDTO = new TransferDTO(
+        TopUpDTO topUpDTO = new TopUpDTO(
                 createdCurrentAccount.getId(),
                 createdTargetAccountDTO.getId(),
                 TEN);
 
         given().port(port)
                 .header("Content-Type", "application/json")
-                .body(transferDTO)
+                .body(topUpDTO)
                 .put(endpoints.banking.url + endpoints.banking.topUp)
                 .then()
                 .assertThat()
@@ -182,9 +189,14 @@ public class InternetBankingControllerIntegrationTests {
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.transfer.success));
 
+        DrawDownDTO drawDownDTO = new DrawDownDTO(
+                createdCurrentAccount.getId(),
+                createdTargetAccountDTO.getId(),
+                TEN);
+
         given().port(port)
                 .header("Content-Type", "application/json")
-                .body(transferDTO)
+                .body(drawDownDTO)
                 .put(endpoints.banking.url + endpoints.banking.drawDown)
                 .then()
                 .assertThat()
