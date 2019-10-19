@@ -14,6 +14,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
@@ -33,6 +34,11 @@ public class AccountRepository {
         return Optional.of(account).filter(a -> a.getId() != null);
     }
 
+    public Optional<Account> update(Account account) {
+        entityManager.merge(account);
+        return findById(account.getId());
+    }
+
     public Optional<Account> remove(Account account) {
         Optional<Account> accountToBeRemoved = findById(account.getId());
         accountToBeRemoved.ifPresent(_account -> entityManager.remove(
@@ -40,17 +46,16 @@ public class AccountRepository {
         return accountToBeRemoved;
     }
 
-    public Optional<Account> findById(Long accountId) {
-        return Optional.ofNullable(entityManager.find(Account.class, accountId));
-    }
-
-    public List<Account> findByUser(User user) {
+    public List<Account> findAll() {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Account> query = criteriaBuilder.createQuery(Account.class);
         Root<Account> from = query.from(Account.class);
-        Predicate userIdCriteria = criteriaBuilder.equal(from.get("user_id"), user.getId());
-        query.where(userIdCriteria);
+        query.select(from);
         return entityManager.createQuery(query).getResultList();
+    }
+
+    public Optional<Account> findById(Long accountId) {
+        return Optional.ofNullable(entityManager.find(Account.class, accountId));
     }
 
     public List<Account> findByUserId(Long userId) {
@@ -62,16 +67,10 @@ public class AccountRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    public List<Account> findAll() {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Account> query = criteriaBuilder.createQuery(Account.class);
-        Root<Account> from = query.from(Account.class);
-        query.select(from);
-        return entityManager.createQuery(query).getResultList();
-    }
-
-    public Optional<Account> update(Account account) {
-        entityManager.merge(account);
-        return findById(account.getId());
+    public List<Account> findByUser(User user) {
+        return Optional.ofNullable(user)
+                .flatMap(u -> Optional.ofNullable(u.getId()))
+                .map(this::findByUserId)
+                .orElse(emptyList());
     }
 }

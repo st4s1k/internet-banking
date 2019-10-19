@@ -14,6 +14,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
@@ -33,33 +34,16 @@ public class TransferRepository {
         return Optional.of(transfer).filter(a -> a.getId() != null);
     }
 
+    public Optional<Transfer> update(Transfer transfer) {
+        entityManager.merge(transfer);
+        return findById(transfer.getId());
+    }
+
     public Optional<Transfer> remove(Transfer transfer) {
         Optional<Transfer> transferToBeRemoved = findById(transfer.getId());
         transferToBeRemoved.ifPresent(_transfer -> entityManager.remove(
                 entityManager.contains(_transfer) ? _transfer : entityManager.merge(_transfer)));
         return transferToBeRemoved;
-    }
-
-    public Optional<Transfer> findById(Long transferId) {
-        return Optional.ofNullable(entityManager.find(Transfer.class, transferId));
-    }
-
-    public List<Transfer> findByUser(Account account) {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
-        Root<Transfer> from = query.from(Transfer.class);
-        Predicate userIdCriteria = criteriaBuilder.equal(from.get("account_id"), account.getId());
-        query.where(userIdCriteria);
-        return entityManager.createQuery(query).getResultList();
-    }
-
-    public List<Transfer> findByUserId(Long accountId) {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
-        Root<Transfer> from = query.from(Transfer.class);
-        Predicate userIdCriteria = criteriaBuilder.equal(from.get("account_id"), accountId);
-        query.where(userIdCriteria);
-        return entityManager.createQuery(query).getResultList();
     }
 
     public List<Transfer> findAll() {
@@ -70,8 +54,29 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    public Optional<Transfer> update(Transfer transfer) {
-        entityManager.merge(transfer);
-        return findById(transfer.getId());
+    public Optional<Transfer> findById(Long transferId) {
+        return Optional.ofNullable(entityManager.find(Transfer.class, transferId));
+    }
+
+    public Optional<Transfer> find(Transfer transfer) {
+        return Optional.ofNullable(transfer)
+                .flatMap(t -> Optional.ofNullable(t.getId()))
+                .flatMap(this::findById);
+    }
+
+    public List<Transfer> findByAccountId(Long accountId) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
+        Root<Transfer> from = query.from(Transfer.class);
+        Predicate accountIdCriteria = criteriaBuilder.equal(from.get("account_id"), accountId);
+        query.where(accountIdCriteria);
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    public List<Transfer> findByAccount(Account account) {
+        return Optional.ofNullable(account)
+                .flatMap(a -> Optional.ofNullable(a.getId()))
+                .map(this::findByAccountId)
+                .orElse(emptyList());
     }
 }

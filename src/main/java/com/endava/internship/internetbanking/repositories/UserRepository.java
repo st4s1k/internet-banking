@@ -32,6 +32,10 @@ public class UserRepository {
         return Optional.of(user).filter(u -> u.getId() != null);
     }
 
+    public Optional<User> update(User user) {
+        return Optional.ofNullable(entityManager.merge(user));
+    }
+
     public Optional<User> remove(User user) {
         Optional<User> userToBeRemoved = findById(user.getId());
         userToBeRemoved.ifPresent(_user ->
@@ -39,8 +43,22 @@ public class UserRepository {
         return userToBeRemoved;
     }
 
+    public List<User> findAll() {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
+        Root<User> from = query.from(User.class);
+        query.select(from);
+        return entityManager.createQuery(query).getResultList();
+    }
+
     public Optional<User> findById(Long userId) {
         return Optional.ofNullable(entityManager.find(User.class, userId));
+    }
+
+    public Optional<User> find(User user) {
+        return Optional.ofNullable(user)
+                .flatMap(u -> Optional.ofNullable(u.getId()))
+                .flatMap(this::findById);
     }
 
     public Optional<User> findByName(String name) {
@@ -52,17 +70,5 @@ public class UserRepository {
         return entityManager.createQuery(query)
                 .getResultStream()
                 .findAny();
-    }
-
-    public List<User> findAll() {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
-        Root<User> from = query.from(User.class);
-        query.select(from);
-        return entityManager.createQuery(query).getResultList();
-    }
-
-    public Optional<User> update(User user) {
-        return Optional.ofNullable(entityManager.merge(user));
     }
 }
