@@ -57,6 +57,12 @@ messages:
       bad-destination-id: Target account with given ID does not exist
       logging-fail: Logging failed
       fail: Transfer operation failed
+  logging:
+    reconciliation:
+      started: Reconciliation procedure started...
+      ended: Reconciliation done.
+      success: Account consistency check SUCCESS!
+      fail: Account consistency check FAIL!
 # Controller endpoints
 endpoints:
   users:

@@ -11,6 +11,7 @@ public class Messages {
 
     public Http http;
     public Exceptions exceptions;
+    public Logging logging;
 
     @Setter
     public static class Http {
@@ -74,6 +75,20 @@ public class Messages {
             public String badSourceId;
             public String badDestinationId;
             public String loggingFail;
+            public String fail;
+        }
+    }
+
+    @Setter
+    public static class Logging {
+
+        public Reconciliation reconciliation;
+
+        @Setter
+        public static class Reconciliation {
+            public String started;
+            public String ended;
+            public String success;
             public String fail;
         }
     }
