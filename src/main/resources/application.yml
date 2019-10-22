@@ -1,0 +1,75 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql:internetbanking
+    username: postgres
+    password: postgres
+  flyway:
+    url: jdbc:postgresql:internetbanking
+    user: postgres
+    password: postgres
+  jpa:
+    properties:
+      hibernate:
+        temp:
+          # # # # # # # # # # # # # # # # #
+          # Avoid exception related       #
+          # to new PostgreSQL version     #
+          # # # # # # # # # # # # # # # # #
+          use_jdbc_metadata_defaults: false
+
+messages:
+  # HTTP response messages
+  http:
+    # User controller messages
+    user:
+      creation:
+        success: User successfully created
+        fail: Failed to create user
+        fail-existing-username: User with this name already exists
+    # Account controller messages
+    account:
+      creation:
+        success: Account for user successfully created
+        fail: Account creation failed
+        user-not-found: Could not create a new account for specified user
+    # Banking controller messages
+    transfer:
+      current-account-not-found: Could not define current account
+      target-account-not-found: Could not define target account
+      current-account-null: Null value not allowed for current account
+      target-account-null: Null value not allowed for target account
+      transfer-object-null: Transfer object is null
+      transfer-amount-null: Null value not allowed for transfer amount
+      invalid-transfer-amount: Invalid transfer amount
+      insufficient-funds: Source account has insufficient funds for transfer
+      success: Transfer operation executed successfully
+      fail: Transfer operation failed
+  # Exceptions
+  exceptions:
+    #Banking service messages
+    transfer:
+      transfer-object-null: Transfer object is null
+      transfer-amount-null: Null value not allowed for transfer amount
+      invalid-transfer-amount: Invalid transfer amount
+      insufficient-funds: Source account has insufficient funds for transfer
+      bad-source-id: Current account with given ID does not exist
+      bad-destination-id: Target account with given ID does not exist
+      logging-fail: Logging failed
+      fail: Transfer operation failed
+  logging:
+    reconciliation:
+      started: Reconciliation procedure started...
+      ended: Reconciliation done.
+      success: Account consistency check SUCCESS!
+      fail: Account consistency check FAIL!
+# Controller endpoints
+endpoints:
+  users:
+    url: "/users"
+  accounts:
+    url: "/accounts"
+  banking:
+    url: "/banking"
+    top-up: "/topup"
+    draw-down: "/drawdown"

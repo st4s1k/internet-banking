@@ -1,4 +1,4 @@
-/.idea/
-banking.iml
-target/
-internet-banking.iml
+\.idea/
+\*.iml
+\target/
+\logs/
