@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Setter
 @Component
-@ConfigurationProperties("messages")
+@ConfigurationProperties("internetbanking.messages")
 public class Messages {
 
     public Http http;

@@ -17,7 +17,7 @@ import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Builder
-@Table(name = "accounts")
+@Table(name = "t_account")
 public class Account {
 
     @Id

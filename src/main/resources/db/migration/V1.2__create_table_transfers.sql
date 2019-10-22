@@ -1,6 +1,6 @@
-create table transfers (
+create table t_transfer (
     id bigserial,
-    transfer_date_time timestamp,
+    date_time timestamp,
     funds numeric,
     source_account_id bigint,
     destination_account_id bigint

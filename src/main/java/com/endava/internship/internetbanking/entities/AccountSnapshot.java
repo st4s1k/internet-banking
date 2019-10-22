@@ -16,13 +16,15 @@ import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Builder
-@Table(name = "t_transfer")
-public class Transfer {
+@Table(name = "t_account_history")
+public class AccountSnapshot {
 
     @Id
+    @Column(name = "id")
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
+    @NonNull
     @Builder.Default
     @NotNull
     @Column(name = "date_time")
@@ -30,18 +32,12 @@ public class Transfer {
 
     @NonNull
     @NotNull
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @NonNull
+    @NotNull
     @Column(name = "funds")
     private BigDecimal funds;
-
-    @NonNull
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "source_account_id")
-    private Account sourceAccount;
-
-    @NonNull
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "destination_account_id")
-    private Account destinationAccount;
 }

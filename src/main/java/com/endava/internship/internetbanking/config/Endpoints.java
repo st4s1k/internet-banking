@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Setter
 @Component
-@ConfigurationProperties("endpoints")
+@ConfigurationProperties("internetbanking.endpoints")
 public class Endpoints {
 
     public Users users;

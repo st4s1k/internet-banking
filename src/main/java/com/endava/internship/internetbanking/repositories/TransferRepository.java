@@ -6,13 +6,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.transaction.Transactional;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
@@ -68,8 +72,9 @@ public class TransferRepository {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
         Root<Transfer> from = query.from(Transfer.class);
-        Predicate accountIdCriteria = criteriaBuilder.equal(from.get("account_id"), accountId);
-        query.where(accountIdCriteria);
+        Predicate destinationAccountIdCriteria = criteriaBuilder.equal(from.get("sourceAccount"), accountId);
+        Predicate sourceAccountIdCriteria = criteriaBuilder.equal(from.get("destinationAccount"), accountId);
+        query.where(criteriaBuilder.or(sourceAccountIdCriteria, destinationAccountIdCriteria));
         return entityManager.createQuery(query).getResultList();
     }
 
@@ -78,5 +83,75 @@ public class TransferRepository {
                 .flatMap(a -> Optional.ofNullable(a.getId()))
                 .map(this::findByAccountId)
                 .orElse(emptyList());
+    }
+
+    public List<Transfer> findAllBefore(LocalDateTime dateTime) {
+        return findBefore(dateTime).getResultList();
+    }
+
+    public List<Transfer> findAllAfter(LocalDateTime dateTime) {
+        return findAfter(dateTime).getResultList();
+    }
+
+    public List<Transfer> findAllBefore(Set<Account> accounts, LocalDateTime dateTime) {
+        return findBefore(accounts, dateTime).getResultList();
+    }
+
+    public List<Transfer> findAllAfter(Set<Account> accounts, LocalDateTime dateTime) {
+        return findAfter(accounts, dateTime).getResultList();
+    }
+
+    private TypedQuery<Transfer> findBefore(Set<Account> accounts, LocalDateTime dateTime) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
+        Root<Transfer> from = query.from(Transfer.class);
+
+        Predicate queryCriteria = criteriaBuilder.and(
+                criteriaBuilder.or(
+                        from.get("sourceAccount").in(accounts),
+                        from.get("destinationAccount").in(accounts)),
+                criteriaBuilder.lessThanOrEqualTo(from.get("dateTime"), Timestamp.valueOf(dateTime)));
+
+        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
+
+        return entityManager.createQuery(query);
+    }
+
+    private TypedQuery<Transfer> findAfter(Set<Account> accounts, LocalDateTime dateTime) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
+        Root<Transfer> from = query.from(Transfer.class);
+
+        Predicate queryCriteria = criteriaBuilder.and(
+                criteriaBuilder.or(
+                        from.get("sourceAccount").in(accounts),
+                        from.get("destinationAccount").in(accounts)),
+                criteriaBuilder.greaterThanOrEqualTo(from.get("dateTime"), Timestamp.valueOf(dateTime)));
+
+        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
+
+        return entityManager.createQuery(query);
+    }
+
+    private TypedQuery<Transfer> findBefore(LocalDateTime dateTime) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
+        Root<Transfer> from = query.from(Transfer.class);
+
+        Predicate queryCriteria = criteriaBuilder.lessThanOrEqualTo(from.get("dateTime"), Timestamp.valueOf(dateTime));
+
+        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
+        return entityManager.createQuery(query);
+    }
+
+    private TypedQuery<Transfer> findAfter(LocalDateTime dateTime) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Transfer> query = criteriaBuilder.createQuery(Transfer.class);
+        Root<Transfer> from = query.from(Transfer.class);
+
+        Predicate queryCriteria = criteriaBuilder.greaterThanOrEqualTo(from.get("dateTime"), dateTime);
+
+        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
+        return entityManager.createQuery(query);
     }
 }
