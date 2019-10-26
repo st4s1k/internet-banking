@@ -52,11 +52,19 @@ public class AccountService {
     }
 
     public Account accountFromDTO(AccountDTO accountDTO) {
-        Account.AccountBuilder accountBuilder = Account.builder()
-                .id(accountDTO.getId())
-                .funds(accountDTO.getFunds());
-        Optional<User> optUser = userService.findById(accountDTO.getUserId());
-        optUser.ifPresent(accountBuilder::user);
+
+        Account.AccountBuilder accountBuilder = Account.builder().id(accountDTO.getId());
+
+        Optional<Account> optAccount = accountRepository.findById(accountDTO.getId());
+
+        optAccount.map(Account::getFunds)
+                .ifPresent(accountBuilder::funds);
+
+        optAccount.map(Account::getUser)
+                .map(Optional::of)
+                .orElse(userService.findById(accountDTO.getUserId()))
+                .ifPresent(accountBuilder::user);
+
         return accountBuilder.build();
     }
 }

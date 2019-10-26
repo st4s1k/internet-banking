@@ -7,8 +7,6 @@ import com.endava.internship.internetbanking.dto.DrawDownDTO;
 import com.endava.internship.internetbanking.dto.TopUpDTO;
 import com.endava.internship.internetbanking.dto.UserDTO;
 import com.endava.internship.internetbanking.entities.Account;
-import com.endava.internship.internetbanking.repositories.AccountRepository;
-import com.endava.internship.internetbanking.repositories.UserRepository;
 import com.endava.internship.internetbanking.services.AccountService;
 import com.endava.internship.internetbanking.services.UserService;
 import io.restassured.response.Response;
@@ -20,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -44,26 +43,21 @@ public class InternetBankingIntegrationTests {
     @LocalServerPort
     private int port;
 
-    private static UserRepository userRepository;
-    private static AccountRepository accountRepository;
+    private static UserService userService;
+    private static AccountService accountService;
 
-    private UserService userService;
-    private AccountService accountService;
     private Messages msg;
     private Endpoints endpoints;
 
     @Autowired
-    public InternetBankingIntegrationTests(UserRepository userRepository,
-                                           AccountRepository accountRepository,
-                                           UserService userService,
+    public InternetBankingIntegrationTests(UserService userService,
                                            AccountService accountService,
                                            Messages msg,
                                            Endpoints endpoints) {
-        InternetBankingIntegrationTests.userRepository = userRepository;
-        InternetBankingIntegrationTests.accountRepository = accountRepository;
 
-        this.userService = userService;
-        this.accountService = accountService;
+        InternetBankingIntegrationTests.userService = userService;
+        InternetBankingIntegrationTests.accountService = accountService;
+
         this.msg = msg;
         this.endpoints = endpoints;
     }
@@ -91,25 +85,28 @@ public class InternetBankingIntegrationTests {
     @AfterAll
     public static void cleanUp() {
         accountsCache.stream()
-                .map(accountRepository::findById)
+                .map(accountService::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(accountRepository::remove);
+                .forEach(accountService::remove);
         usersCache.stream()
-                .map(userRepository::findById)
+                .map(userService::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(userRepository::remove);
+                .forEach(userService::remove);
     }
 
     @Test
     public void userControllerTest() {
 
         String userName = "IT TestUser One";
+
+        assertFalse(userService.findByName(userName).isPresent());
+
         Response response = createUser(userName);
         UserDTO createdUserDTO = response.jsonPath().getObject("data", UserDTO.class);
 
-        assertFalse(userService.findByName(userName).isPresent());
+        assertTrue(userService.findByName(userName).isPresent());
 
         response.then().assertThat()
                 .log().all()
@@ -119,8 +116,6 @@ public class InternetBankingIntegrationTests {
                 .body("timestamp", notNullValue())
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.user.creation.success));
-
-        assertTrue(userService.findByName(userName).isPresent());
 
         assertNotNull(createdUserDTO.getId());
         assertEquals(userName, createdUserDTO.getName());
@@ -132,11 +127,13 @@ public class InternetBankingIntegrationTests {
         Response response = createUser("IT TestUser Two");
         UserDTO createdUserDTO = response.jsonPath().getObject("data", UserDTO.class);
 
+        assertTrue(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
+
         response = createAccount(createdUserDTO.getId());
         AccountDTO createdAccountDTO = response.getBody().jsonPath()
                 .getObject("data", AccountDTO.class);
 
-        assertTrue(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
+        assertFalse(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
 
         response.then()
                 .log().all()
@@ -148,15 +145,13 @@ public class InternetBankingIntegrationTests {
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.account.creation.success));
 
-        assertFalse(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
-
         assertNotNull(createdAccountDTO.getId());
         assertEquals(ZERO, createdAccountDTO.getFunds());
         assertEquals(createdUserDTO.getId(), createdAccountDTO.getUserId());
     }
 
     @Test
-    public void bankingControllerTest() {
+    public void bankingControllerTopUpTest() {
 
         Response response = createUser("IT TestUser Three");
         UserDTO createdUserDTO = response.jsonPath().getObject("data", UserDTO.class);
@@ -164,41 +159,89 @@ public class InternetBankingIntegrationTests {
         response = createAccount(createdUserDTO.getId());
         AccountDTO createdCurrentAccountDTO = response.getBody().jsonPath()
                 .getObject("data", AccountDTO.class);
-
         Account createdCurrentAccount = accountService.accountFromDTO(createdCurrentAccountDTO);
         createdCurrentAccount.setFunds(TEN.multiply(TEN));
-        accountService.update(createdCurrentAccount);
+        accountService.update(createdCurrentAccount)
+                .map(Account::getFunds)
+                .ifPresent(createdCurrentAccount::setFunds);
 
         response = createAccount(createdUserDTO.getId());
         AccountDTO createdTargetAccountDTO = response.getBody().jsonPath()
                 .getObject("data", AccountDTO.class);
 
+        Account createdTargetAccount = accountService.accountFromDTO(createdTargetAccountDTO);
+
         TopUpDTO topUpDTO = new TopUpDTO(
                 createdCurrentAccount.getId(),
-                createdTargetAccountDTO.getId(),
+                createdTargetAccount.getId(),
                 TEN);
 
-        given().port(port)
+        Response topUpResponse = given().port(port)
+                .log().all()
                 .header("Content-Type", "application/json")
                 .body(topUpDTO)
-                .put(endpoints.banking.url + endpoints.banking.topUp)
-                .then()
+                .put(endpoints.banking.url + endpoints.banking.topUp);
+
+        Optional<Account> optCurrentAccount = accountService.findById(createdCurrentAccount.getId());
+        Optional<Account> optTargetAccount = accountService.findById(createdTargetAccount.getId());
+
+        assertTrue(optCurrentAccount.isPresent());
+        assertTrue(optTargetAccount.isPresent());
+
+        assertEquals(new BigDecimal(90), optCurrentAccount.get().getFunds());
+        assertEquals(new BigDecimal(10), optTargetAccount.get().getFunds());
+
+        topUpResponse.then()
+                .log().all()
                 .assertThat()
                 .statusCode(OK.value())
                 .body(notNullValue())
                 .body("status", equalTo(OK.value()))
                 .body("message", equalTo(msg.http.transfer.success));
+    }
+
+    @Test
+    public void bankingControllerDrawDownTest() {
+
+        Response response = createUser("IT TestUser Four");
+        UserDTO createdUserDTO = response.jsonPath().getObject("data", UserDTO.class);
+
+        response = createAccount(createdUserDTO.getId());
+        AccountDTO createdCurrentAccountDTO = response.getBody().jsonPath()
+                .getObject("data", AccountDTO.class);
+        Account createdCurrentAccount = accountService.accountFromDTO(createdCurrentAccountDTO);
+
+        response = createAccount(createdUserDTO.getId());
+        AccountDTO createdTargetAccountDTO = response.getBody().jsonPath()
+                .getObject("data", AccountDTO.class);
+        Account createdTargetAccount = accountService.accountFromDTO(createdTargetAccountDTO);
+        createdTargetAccount.setFunds(TEN.multiply(TEN));
+        accountService.update(createdTargetAccount)
+                .map(Account::getFunds)
+                .ifPresent(createdTargetAccount::setFunds);
 
         DrawDownDTO drawDownDTO = new DrawDownDTO(
                 createdCurrentAccount.getId(),
-                createdTargetAccountDTO.getId(),
+                createdTargetAccount.getId(),
                 TEN);
 
-        given().port(port)
+        Response drawDownResponse = given().port(port)
+                .log().all()
                 .header("Content-Type", "application/json")
                 .body(drawDownDTO)
-                .put(endpoints.banking.url + endpoints.banking.drawDown)
-                .then()
+                .put(endpoints.banking.url + endpoints.banking.drawDown);
+
+        Optional<Account> optCurrentAccount = accountService.findById(createdCurrentAccount.getId());
+        Optional<Account> optTargetAccount = accountService.findById(createdTargetAccount.getId());
+
+        assertTrue(optCurrentAccount.isPresent());
+        assertTrue(optTargetAccount.isPresent());
+
+        assertEquals(new BigDecimal(10), optCurrentAccount.get().getFunds());
+        assertEquals(new BigDecimal(90), optTargetAccount.get().getFunds());
+
+        drawDownResponse.then()
+                .log().all()
                 .assertThat()
                 .statusCode(OK.value())
                 .body(notNullValue())

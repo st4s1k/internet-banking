@@ -19,6 +19,7 @@ import static javax.persistence.GenerationType.IDENTITY;
 @Table(name = "t_transfer")
 public class Transfer {
 
+    @EqualsAndHashCode.Exclude
     @Id
     @GeneratedValue(strategy = IDENTITY)
     private Long id;

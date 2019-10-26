@@ -9,18 +9,10 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("internetbanking.env")
 public class InternetBankingEnv {
 
-
+    public Reconciliation reconciliation;
 
     @Setter
     public static class Reconciliation {
-
-        public String rate;
-
-        @Setter
-        public static class Creation {
-            public String success;
-            public String fail;
-            public String userNotFound;
-        }
+        public Long rate;
     }
 }

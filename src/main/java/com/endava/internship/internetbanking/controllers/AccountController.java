@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.*;
 
 @RestController
-@RequestMapping("${endpoints.accounts.url}")
+@RequestMapping("${internetbanking.endpoints.accounts.url}")
 public class AccountController {
 
     private final AccountService accountService;

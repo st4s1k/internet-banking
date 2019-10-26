@@ -16,11 +16,13 @@ import static javax.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @AllArgsConstructor
 @RequiredArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 
 @Entity
 @Table(name = "t_user")
 public class User {
 
+    @EqualsAndHashCode.Include
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = IDENTITY)

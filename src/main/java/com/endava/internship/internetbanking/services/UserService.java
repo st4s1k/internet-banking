@@ -23,6 +23,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public Optional<User> update(User user) {
+        return userRepository.update(user);
+    }
+
+    public Optional<User> remove(User user) {
+        return userRepository.remove(user);
+    }
+
     public List<User> findAll() {
         return userRepository.findAll();
     }

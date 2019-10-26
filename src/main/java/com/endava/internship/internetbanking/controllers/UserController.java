@@ -16,7 +16,7 @@ import java.util.Optional;
 import static org.springframework.http.HttpStatus.*;
 
 @RestController
-@RequestMapping("${endpoints.users.url}")
+@RequestMapping("${internetbanking.endpoints.users.url}")
 public class UserController {
 
     private final UserService userService;

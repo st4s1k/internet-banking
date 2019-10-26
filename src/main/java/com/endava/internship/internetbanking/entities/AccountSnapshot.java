@@ -19,6 +19,7 @@ import static javax.persistence.GenerationType.IDENTITY;
 @Table(name = "t_account_history")
 public class AccountSnapshot {
 
+    @EqualsAndHashCode.Exclude
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = IDENTITY)
