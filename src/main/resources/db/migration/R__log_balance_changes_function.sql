@@ -2,7 +2,7 @@ create or replace function log_balance_changes()
     returns trigger as
 $body$
 begin
-   if new.funds <> old.funds then
+   if tg_op = 'insert ' or (tg_op = 'update' and new.funds <> old.funds) then
        insert into t_account_history(date_time, account_id, funds)
        values(now(), new.id, new.funds);
    end if;
