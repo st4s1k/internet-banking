@@ -30,12 +30,14 @@ internetbanking:
     http:
       # User controller messages
       user:
+        no-content: No users have been found
         creation:
           success: User successfully created
           fail: Failed to create user
           fail-existing-username: User with this name already exists
       # Account controller messages
       account:
+        no-content: No accounts have been found
         creation:
           success: Account for user successfully created
           fail: Account creation failed
