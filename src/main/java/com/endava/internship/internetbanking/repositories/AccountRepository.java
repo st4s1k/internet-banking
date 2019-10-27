@@ -18,7 +18,6 @@ import static java.util.Collections.emptyList;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
-@Transactional(REQUIRES_NEW)
 public class AccountRepository {
 
     private final EntityManager entityManager;

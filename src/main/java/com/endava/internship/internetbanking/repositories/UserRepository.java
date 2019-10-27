@@ -16,7 +16,6 @@ import java.util.Optional;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
-@Transactional(REQUIRES_NEW)
 public class UserRepository {
 
     private final EntityManager entityManager;

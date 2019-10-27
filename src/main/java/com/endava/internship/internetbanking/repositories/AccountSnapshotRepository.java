@@ -19,7 +19,6 @@ import static java.util.Collections.emptyList;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
-@Transactional(REQUIRES_NEW)
 public class AccountSnapshotRepository {
 
     private final AccountRepository accountRepository;
