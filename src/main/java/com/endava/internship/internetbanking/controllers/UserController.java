@@ -26,7 +26,7 @@ public class UserController {
 
     private final Function<List<UserDTO>, ResponseEntity<ResponseBean>> noContentResponse;
     private final Function<List<UserDTO>, Supplier<ResponseEntity<ResponseBean>>> allUsersResponse;
-    private final Function<User, ResponseEntity<ResponseBean>> userCreationFailResponse;
+    private final Function<User, ResponseEntity<ResponseBean>> userCreationFailExistingUserNameResponse;
     private final Function<User, ResponseEntity<ResponseBean>> userCreationSuccessResponse;
     private final Supplier<ResponseEntity<ResponseBean>> internalServerErrorResponse;
 
@@ -47,7 +47,7 @@ public class UserController {
                         .data(users)
                         .build());
 
-        this.userCreationFailResponse = existingUser ->
+        this.userCreationFailExistingUserNameResponse = existingUser ->
                 ResponseEntity.badRequest().body(ResponseBean.builder()
                         .status(BAD_REQUEST.value())
                         .message(msg.http.user.creation.failExistingUsername)
@@ -82,7 +82,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<ResponseBean> createUser(@RequestBody @Valid UserDTO dto) {
         return userService.findByName(dto.getName())
-                .map(userCreationFailResponse)
+                .map(userCreationFailExistingUserNameResponse)
                 .orElse(userService.createUser(dto.getName())
                         .map(userCreationSuccessResponse)
                         .orElseGet(internalServerErrorResponse));
