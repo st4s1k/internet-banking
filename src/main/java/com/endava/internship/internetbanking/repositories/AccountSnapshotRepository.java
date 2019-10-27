@@ -6,9 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import javax.transaction.Transactional;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,10 +22,14 @@ import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 @Transactional(REQUIRES_NEW)
 public class AccountSnapshotRepository {
 
+    private final AccountRepository accountRepository;
+
     private final EntityManager entityManager;
 
     @Autowired
-    public AccountSnapshotRepository(EntityManager entityManager) {
+    public AccountSnapshotRepository(AccountRepository accountRepository,
+                                     EntityManager entityManager) {
+        this.accountRepository = accountRepository;
         this.entityManager = entityManager;
     }
 
@@ -40,109 +45,103 @@ public class AccountSnapshotRepository {
 
     public List<AccountSnapshot> findAll() {
 
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
 
-        query.select(from);
-        return entityManager.createQuery(query).getResultList();
-    }
+        query.select(snapshotFields);
 
-    public List<AccountSnapshot> findByAccountId(Long accountId) {
-
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
-
-        Predicate accountIdCriteria = criteriaBuilder.equal(from.get("account"), accountId);
-
-        query.where(accountIdCriteria);
         return entityManager.createQuery(query).getResultList();
     }
 
     public List<AccountSnapshot> findByAccount(Account account) {
 
-        return Optional.ofNullable(account)
-                .flatMap(a -> Optional.ofNullable(a.getId()))
-                .map(this::findByAccountId)
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
+
+        query.select(snapshotFields)
+                .where(cb.equal(snapshotFields.get("account"), account));
+
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    public List<AccountSnapshot> findByAccountId(Long accountId) {
+        return Optional.ofNullable(accountId)
+                .flatMap(accountRepository::findById)
+                .map(this::findByAccount)
                 .orElse(emptyList());
     }
 
-    public AccountSnapshot findLatestBefore(Long accountId, LocalDateTime dateTime) {
+    public AccountSnapshot findLatestBefore(Account account, LocalDateTime dateTime) {
 
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
 
-        Subquery<LocalDateTime> subQuery = query.subquery(LocalDateTime.class);
-        Root<AccountSnapshot> fromSubQuery = subQuery.from(AccountSnapshot.class);
-        subQuery.select(criteriaBuilder.greatest(fromSubQuery.<LocalDateTime>get("dateTime")));
+        query.select(snapshotFields)
+                .where(cb.equal(snapshotFields.get("account"), account))
+                .groupBy(snapshotFields.get("id"),
+                        snapshotFields.get("account"),
+                        snapshotFields.get("funds"))
+                .having(cb.lessThanOrEqualTo(cb.greatest(
+                        snapshotFields.get("dateTime").as(LocalDateTime.class)), dateTime))
+                .orderBy(cb.desc(snapshotFields.get("dateTime")));
 
-        Predicate queryCriteria = criteriaBuilder.and(
-                criteriaBuilder.equal(from.get("account"), accountId),
-                criteriaBuilder.equal(from.get("dateTime"), subQuery));
-
-        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
-        return entityManager.createQuery(query)
-                .setFirstResult(0)
-                .setMaxResults(1)
-                .getSingleResult();
+        return entityManager.createQuery(query).getSingleResult();
     }
 
     public List<AccountSnapshot> findAllLatestBefore(Set<Account> accounts, LocalDateTime dateTime) {
 
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
 
-        Subquery<LocalDateTime> subQuery = query.subquery(LocalDateTime.class);
-        Root<AccountSnapshot> fromSubQuery = subQuery.from(AccountSnapshot.class);
-        subQuery.select(criteriaBuilder.greatest(fromSubQuery.<LocalDateTime>get("dateTime")));
+        query.select(snapshotFields)
+                .where(snapshotFields.get("account").in(accounts))
+                .groupBy(snapshotFields.get("id"),
+                        snapshotFields.get("account"),
+                        snapshotFields.get("funds"))
+                .having(cb.lessThanOrEqualTo(cb.greatest(
+                        snapshotFields.get("dateTime").as(LocalDateTime.class)), dateTime))
+                .orderBy(cb.desc(snapshotFields.get("dateTime")));
 
-        Predicate queryCriteria = criteriaBuilder.and(
-                from.get("account").in(accounts),
-                criteriaBuilder.lessThanOrEqualTo(from.get("dateTime"), Timestamp.valueOf(dateTime)));
-
-        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
         return entityManager.createQuery(query).getResultList();
     }
 
-    public AccountSnapshot findEarliestAfter(Long accountId, LocalDateTime dateTime) {
+    public AccountSnapshot findEarliestAfter(Account account, LocalDateTime dateTime) {
 
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
 
-        Subquery<LocalDateTime> subQuery = query.subquery(LocalDateTime.class);
-        Root<AccountSnapshot> fromSubQuery = subQuery.from(AccountSnapshot.class);
-        subQuery.select(criteriaBuilder.least(fromSubQuery.<LocalDateTime>get("dateTime")));
+        query.select(snapshotFields)
+                .where(cb.equal(snapshotFields.get("account"), account))
+                .groupBy(snapshotFields.get("id"),
+                        snapshotFields.get("account"),
+                        snapshotFields.get("funds"))
+                .having(cb.greaterThanOrEqualTo(cb.least(
+                        snapshotFields.get("dateTime").as(LocalDateTime.class)), dateTime))
+                .orderBy(cb.desc(snapshotFields.get("dateTime")));
 
-        Predicate queryCriteria = criteriaBuilder.and(
-                criteriaBuilder.equal(from.get("account"), accountId),
-                criteriaBuilder.equal(from.get("dateTime"), subQuery));
-
-        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
-        return entityManager.createQuery(query)
-                .setFirstResult(0)
-                .setMaxResults(1)
-                .getSingleResult();
+        return entityManager.createQuery(query).getSingleResult();
     }
 
     public List<AccountSnapshot> findAllEarliestAfter(Set<Account> accounts, LocalDateTime dateTime) {
 
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<AccountSnapshot> query = criteriaBuilder.createQuery(AccountSnapshot.class);
-        Root<AccountSnapshot> from = query.from(AccountSnapshot.class);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<AccountSnapshot> query = cb.createQuery(AccountSnapshot.class);
+        Root<AccountSnapshot> snapshotFields = query.from(AccountSnapshot.class);
 
-        Subquery<LocalDateTime> subQuery = query.subquery(LocalDateTime.class);
-        Root<AccountSnapshot> fromSubQuery = subQuery.from(AccountSnapshot.class);
-        subQuery.select(criteriaBuilder.least(fromSubQuery.<LocalDateTime>get("dateTime")));
+        query.select(snapshotFields)
+                .where(snapshotFields.get("account").in(accounts))
+                .groupBy(snapshotFields.get("id"),
+                        snapshotFields.get("account"),
+                        snapshotFields.get("funds"))
+                .having(cb.greaterThanOrEqualTo(cb.least(
+                        snapshotFields.get("dateTime").as(LocalDateTime.class)), dateTime))
+                .orderBy(cb.desc(snapshotFields.get("dateTime")));
 
-        Predicate queryCriteria = criteriaBuilder.and(
-                from.get("account").in(accounts),
-                criteriaBuilder.equal(from.get("dateTime"), subQuery));
-
-        query.where(queryCriteria).orderBy(criteriaBuilder.desc(from.get("dateTime")));
         return entityManager.createQuery(query).getResultList();
     }
 }
