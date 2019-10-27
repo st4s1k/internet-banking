@@ -161,7 +161,8 @@ public class TransferValidator implements ConstraintValidator<Transfer, ITransfe
     private boolean transferQuotaIsRespected(ITransferDTO dto, ConstraintValidatorContext context) {
         return dto == null || dto.getFunds() == null ||
                 getSourceAccount(dto).map(source -> {
-                    if (source.getFunds() != null && transferService.transferQuotaExceeded(source, dto.getFunds())) {
+                    if (source.getFunds() != null &&
+                            transferService.transferQuotaExceeded(transferService.transferFromDTO(dto))) {
                         context.disableDefaultConstraintViolation();
                         context.buildConstraintViolationWithTemplate(msg.invalidTransferAmount)
                                 .addConstraintViolation();
