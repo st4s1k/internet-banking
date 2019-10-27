@@ -9,9 +9,10 @@ spring:
     user: postgres
     password: postgres
   jpa:
+    show-sql: true
     properties:
       hibernate:
-        temp:
+         temp:
           # # # # # # # # # # # # # # # # #
           # Avoid exception related       #
           # to new PostgreSQL version     #
