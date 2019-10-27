@@ -7,13 +7,9 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
-
-import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
 public class UserRepository {
@@ -25,10 +21,9 @@ public class UserRepository {
         this.entityManager = entityManager;
     }
 
-    public Optional<User> save(User user) {
+    public User save(User user) {
         entityManager.persist(user);
-        entityManager.flush();
-        return Optional.of(user).filter(u -> u.getId() != null);
+        return user;
     }
 
     public Optional<User> update(User user) {
@@ -43,10 +38,12 @@ public class UserRepository {
     }
 
     public List<User> findAll() {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
-        Root<User> from = query.from(User.class);
-        query.select(from);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query = cb.createQuery(User.class);
+        Root<User> userFields = query.from(User.class);
+
+        query.select(userFields);
+
         return entityManager.createQuery(query).getResultList();
     }
 
@@ -61,11 +58,13 @@ public class UserRepository {
     }
 
     public Optional<User> findByName(String name) {
-        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<User> query = criteriaBuilder.createQuery(User.class);
-        Root<User> from = query.from(User.class);
-        Predicate userHasName = criteriaBuilder.equal(from.get("name"), name);
-        query.where(userHasName);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<User> query = cb.createQuery(User.class);
+        Root<User> userFields = query.from(User.class);
+
+        query.select(userFields)
+                .where(cb.equal(userFields.get("name"), name));
+
         return entityManager.createQuery(query)
                 .getResultStream()
                 .findAny();

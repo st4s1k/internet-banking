@@ -88,7 +88,7 @@ public class TransferRepository {
                 .orElse(emptyList());
     }
 
-    private List<Transfer> findAllBefore(LocalDateTime dateTime) {
+    public List<Transfer> findAllBefore(LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);
@@ -100,7 +100,7 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    private List<Transfer> findAllAfter(LocalDateTime dateTime) {
+    public List<Transfer> findAllAfter(LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);
@@ -112,7 +112,7 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    private List<Transfer> findAllBefore(Account account, LocalDateTime dateTime) {
+    public List<Transfer> findAllBefore(Account account, LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);
@@ -126,7 +126,7 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    private List<Transfer> findAllAfter(Account account, LocalDateTime dateTime) {
+    public List<Transfer> findAllAfter(Account account, LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);
@@ -140,7 +140,7 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    private List<Transfer> findAllBefore(Set<Account> accounts, LocalDateTime dateTime) {
+    public List<Transfer> findAllBefore(Set<Account> accounts, LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);
@@ -154,7 +154,7 @@ public class TransferRepository {
         return entityManager.createQuery(query).getResultList();
     }
 
-    private List<Transfer> findAllAfter(Set<Account> accounts, LocalDateTime dateTime) {
+    public List<Transfer> findAllAfter(Set<Account> accounts, LocalDateTime dateTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Transfer> query = cb.createQuery(Transfer.class);
         Root<Transfer> transferFields = query.from(Transfer.class);

@@ -27,10 +27,9 @@ public class AccountRepository {
         this.entityManager = entityManager;
     }
 
-    public Optional<Account> save(Account account) {
+    public Account save(Account account) {
         entityManager.persist(account);
-        entityManager.flush();
-        return Optional.of(account).filter(a -> a.getId() != null);
+        return account;
     }
 
     public Optional<Account> update(Account account) {
