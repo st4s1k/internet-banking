@@ -1,6 +1,7 @@
 package com.endava.internship.internetbanking.entities;
 
 import com.endava.internship.internetbanking.dto.UserDTO;
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import lombok.*;
 
 import javax.persistence.*;
@@ -18,19 +19,21 @@ import static javax.persistence.GenerationType.IDENTITY;
 @RequiredArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 
+@JsonIgnoreType
+
 @Entity
 @Table(name = "t_user")
 public class User {
 
-    @EqualsAndHashCode.Include
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
-    @NonNull
     @NotNull
     @Column(name = "name")
+    @NonNull
     private String name;
 
     @Transient

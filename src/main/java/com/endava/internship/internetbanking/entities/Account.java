@@ -1,6 +1,7 @@
 package com.endava.internship.internetbanking.entities;
 
 import com.endava.internship.internetbanking.dto.AccountDTO;
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import lombok.*;
 
 import javax.persistence.*;
@@ -14,13 +15,15 @@ import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.GenerationType.IDENTITY;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @RequiredArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 
+@JsonIgnoreType
+
 @Entity
-@Builder
 @Table(name = "t_account")
 public class Account {
 
@@ -35,10 +38,10 @@ public class Account {
     @Builder.Default
     private BigDecimal funds = ZERO;
 
-    @NonNull
     @NotNull
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @NonNull
     private User user;
 
     @Transient

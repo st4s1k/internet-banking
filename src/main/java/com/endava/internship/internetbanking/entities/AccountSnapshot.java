@@ -1,5 +1,6 @@
 package com.endava.internship.internetbanking.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import lombok.*;
 
 import javax.persistence.*;
@@ -10,35 +11,37 @@ import java.time.LocalDateTime;
 import static javax.persistence.GenerationType.IDENTITY;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @RequiredArgsConstructor
 
+@JsonIgnoreType
+
 @Entity
-@Builder
 @Table(name = "t_account_history")
 public class AccountSnapshot {
 
-    @EqualsAndHashCode.Exclude
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = IDENTITY)
+    @EqualsAndHashCode.Exclude
     private Long id;
 
-    @NonNull
-    @Builder.Default
     @NotNull
     @Column(name = "date_time")
+    @NonNull
+    @Builder.Default
     private LocalDateTime dateTime = LocalDateTime.now();
 
-    @NonNull
     @NotNull
     @ManyToOne
     @JoinColumn(name = "account_id")
+    @NonNull
     private Account account;
 
-    @NonNull
     @NotNull
     @Column(name = "funds")
+    @NonNull
     private BigDecimal funds;
 }
