@@ -1,19 +1,18 @@
 package com.endava.internship.internetbanking.services;
 
+import com.endava.internship.internetbanking.config.InternetBankingEnv;
 import com.endava.internship.internetbanking.config.Messages;
 import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.entities.AccountSnapshot;
 import com.endava.internship.internetbanking.entities.Transfer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static java.math.BigDecimal.ZERO;
 import static java.time.LocalDateTime.now;
@@ -26,22 +25,19 @@ import static java.util.stream.Collectors.toMap;
 public class ReconciliationService {
 
     private final AccountSnapshotService accountSnapshotService;
-    private final AccountService accountService;
     private final TransferService transferService;
     private final Messages.Logging.Reconciliation msg;
-
-    @Value("${internetbanking.env.reconciliation.rate}")
-    long rate;
+    private final InternetBankingEnv.Reconciliation env;
 
     @Autowired
     public ReconciliationService(AccountSnapshotService accountSnapshotService,
-                                 AccountService accountService,
                                  TransferService transferService,
-                                 Messages msg) {
+                                 Messages msg,
+                                 InternetBankingEnv env) {
         this.accountSnapshotService = accountSnapshotService;
-        this.accountService = accountService;
         this.transferService = transferService;
         this.msg = msg.logging.reconciliation;
+        this.env = env.reconciliation;
     }
 
     @Scheduled(fixedRateString = "${internetbanking.env.reconciliation.rate}")
@@ -49,7 +45,7 @@ public class ReconciliationService {
 
         log.info(msg.started);
 
-        LocalDateTime lastReconciliationTime = now().minus(rate, MILLIS);
+        LocalDateTime lastReconciliationTime = now().minus(env.rate, MILLIS);
         List<Transfer> transfers = transferService.findAllAfter(lastReconciliationTime);
 
         if (!transfers.isEmpty()) {
@@ -62,29 +58,30 @@ public class ReconciliationService {
             Map<Account, List<Transfer>> destinationGroups = transfers.parallelStream()
                     .collect(groupingBy(Transfer::getDestinationAccount));
 
-            Map<Account, BigDecimal> lossMap = sourceGroups.entrySet().parallelStream()
-                    .collect(toMap(Map.Entry::getKey, group ->
-                            group.getValue().stream().map(Transfer::getFunds).reduce(ZERO, BigDecimal::add)));
+            Set<Account> accounts = new HashSet<>();
+            accounts.addAll(sourceGroups.keySet());
+            accounts.addAll(destinationGroups.keySet());
 
-            Map<Account, BigDecimal> gainMap = destinationGroups.entrySet().parallelStream()
-                    .collect(toMap(Map.Entry::getKey, group ->
-                            group.getValue().stream().map(Transfer::getFunds).reduce(ZERO, BigDecimal::add)));
+            List<AccountSnapshot> snapshots =
+                    accountSnapshotService.findAllEarliestAfter(accounts, lastReconciliationTime);
 
-            Map<Account, BigDecimal> expectedDifferential =
-                    calculateBalanceDifferentialRegardingTransferHistory(lossMap, gainMap);
+            balanceConsistencyIsOk = snapshots.size() >= transfers.size();
 
-            Set<Account> accounts = expectedDifferential.keySet();
+            if (balanceConsistencyIsOk) {
 
-            List<AccountSnapshot> snapshots = accountSnapshotService.findAllEarliestAfter(accounts, lastReconciliationTime);
+                Map<Account, BigDecimal> lossMap = reduceTransfers(sourceGroups);
+                Map<Account, BigDecimal> gainMap = reduceTransfers(destinationGroups);
 
-            Map<Account, BigDecimal> actualDifferential =
-                    calculateBalanceDifferentialRegardingAccountHistory(snapshots);
+                Map<Account, BigDecimal> expectedDifferential =
+                        calculateBalanceDifferentialRegardingTransferHistory(accounts, lossMap, gainMap);
+                Map<Account, BigDecimal> actualDifferential =
+                        calculateBalanceDifferentialRegardingAccountHistory(accounts, snapshots);
 
-            balanceConsistencyIsOk = actualDifferential.entrySet()
-                    .stream()
-                    .map(entry -> expectedDifferential.get(entry.getKey()).compareTo(entry.getValue()))
-                    .reduce(0, Integer::sum)
-                    .equals(0);
+                balanceConsistencyIsOk = actualDifferential.entrySet().stream()
+                        .map(entry -> expectedDifferential.get(entry.getKey())
+                                .subtract(entry.getValue()).equals(ZERO))
+                        .reduce(true, Boolean::logicalAnd);
+            }
 
             if (balanceConsistencyIsOk) {
                 log.info(msg.success);
@@ -96,21 +93,33 @@ public class ReconciliationService {
         log.info(msg.ended);
     }
 
-    private Map<Account, BigDecimal>
-    calculateBalanceDifferentialRegardingAccountHistory(List<AccountSnapshot> snapshots) {
-        return snapshots.stream().collect(toMap(
-                AccountSnapshot::getAccount,
-                snapshot -> snapshot.getFunds().subtract(snapshot.getAccount().getFunds())));
+    private Map<Account, BigDecimal> reduceTransfers(Map<Account, List<Transfer>> groups) {
+        return groups.entrySet().parallelStream().collect(toMap(
+                Map.Entry::getKey,
+                group -> group.getValue().stream()
+                        .map(Transfer::getFunds)
+                        .reduce(ZERO, BigDecimal::add)));
     }
 
     private Map<Account, BigDecimal>
-    calculateBalanceDifferentialRegardingTransferHistory(Map<Account, BigDecimal> lossMap,
+    calculateBalanceDifferentialRegardingAccountHistory(Set<Account> accounts,
+                                                        List<AccountSnapshot> snapshots) {
+        return accounts.parallelStream().collect(toMap(
+                account -> account,
+                account -> snapshots.stream()
+                        .filter(s -> s.getAccount().equals(account))
+                        .findAny()
+                        .map(snapshot -> snapshot.getFunds().subtract(account.getFunds()))
+                        .orElse(ZERO)));
+    }
+
+    private Map<Account, BigDecimal>
+    calculateBalanceDifferentialRegardingTransferHistory(Set<Account> accounts,
+                                                         Map<Account, BigDecimal> lossMap,
                                                          Map<Account, BigDecimal> gainMap) {
-        return Stream.of(lossMap.keySet(), gainMap.keySet())
-                .flatMap(Collection::parallelStream).collect(toMap(
-                        account -> account,
-                        account -> Optional.ofNullable(gainMap.get(account))
-                                .flatMap(gain -> Optional.ofNullable(lossMap.get(account)).map(gain::subtract))
-                                .orElse(ZERO)));
+        return accounts.parallelStream().collect(toMap(
+                account -> account,
+                account -> Optional.ofNullable(gainMap.get(account)).orElse(ZERO)
+                        .subtract(Optional.ofNullable(lossMap.get(account)).orElse(ZERO))));
     }
 }
