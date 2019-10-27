@@ -7,13 +7,14 @@ import com.endava.internship.internetbanking.dto.TopUpDTO;
 import com.endava.internship.internetbanking.services.BankingService;
 import com.endava.internship.internetbanking.validation.annotations.Transfer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
@@ -23,47 +24,46 @@ import static org.springframework.http.HttpStatus.OK;
 @RequestMapping("${internetbanking.endpoints.banking.url}")
 public class BankingController {
 
-    private final TaskExecutor taskExecutor;
     private final BankingService bankingService;
-    private final Messages.Http.Transfer msg;
+
+    private final Supplier<ResponseEntity<ResponseBean>> successfulTransferResponse;
+    private final Function<ConstraintViolationException, ResponseEntity<ResponseBean>> constraintViolationResponse;
 
     @Autowired
-    public BankingController(TaskExecutor taskExecutor,
-                             BankingService bankingService,
+    public BankingController(BankingService bankingService,
                              Messages msg) {
-        this.taskExecutor = taskExecutor;
         this.bankingService = bankingService;
-        this.msg = msg.http.transfer;
+
+        this.successfulTransferResponse = () ->
+                ResponseEntity.ok(ResponseBean.builder()
+                        .status(OK.value())
+                        .message(msg.http.transfer.success)
+                        .build());
+
+        this.constraintViolationResponse = e ->
+                ResponseEntity.badRequest().body(ResponseBean.builder()
+                        .status(BAD_REQUEST.value())
+                        .message(e.getConstraintViolations().stream()
+                                .map(ConstraintViolation::getMessage)
+                                .toArray(String[]::new))
+                        .build());
+
     }
 
     @PutMapping("${internetbanking.endpoints.banking.top-up}")
     public ResponseEntity<ResponseBean> topUp(@Transfer @RequestBody TopUpDTO dto) {
-        taskExecutor.execute(() -> {
-        });
         bankingService.topUp(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-        return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
+        return successfulTransferResponse.get();
     }
 
     @PutMapping("${internetbanking.endpoints.banking.draw-down}")
     public ResponseEntity<ResponseBean> drawDown(@Transfer @RequestBody DrawDownDTO dto) {
-        taskExecutor.execute(() -> {
-        });
         bankingService.drawDown(dto.getCurrentAccountId(), dto.getTargetAccountId(), dto.getFunds());
-        return ResponseEntity.ok(ResponseBean.builder().status(OK.value()).message(msg.success).build());
+        return successfulTransferResponse.get();
     }
 
-    @ExceptionHandler({ConstraintViolationException.class})
+    @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ResponseBean> handleConstraintViolationException(ConstraintViolationException e) {
-
-        ResponseBean.ResponseBeanBuilder response = ResponseBean.builder();
-
-        String[] violations = e.getConstraintViolations().stream()
-                .map(ConstraintViolation::getMessage)
-                .toArray(String[]::new);
-
-        response.status(BAD_REQUEST.value())
-                .message(violations);
-
-        return ResponseEntity.badRequest().body(response.build());
+        return constraintViolationResponse.apply(e);
     }
 }

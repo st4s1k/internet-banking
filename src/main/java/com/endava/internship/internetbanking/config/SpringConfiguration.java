@@ -13,6 +13,8 @@ import javax.annotation.PreDestroy;
 @Configuration
 public class SpringConfiguration {
 
+    // TODO: GRACEFUL SHUTDOWN...
+
     @Bean
     @Primary
     public TaskExecutor taskExecutor() {
