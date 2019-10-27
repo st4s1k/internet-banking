@@ -1,6 +1,7 @@
 package com.endava.internship.internetbanking.services;
 
 import com.endava.internship.internetbanking.config.Messages;
+import com.endava.internship.internetbanking.dto.ITransferDTO;
 import com.endava.internship.internetbanking.entities.Account;
 import com.endava.internship.internetbanking.entities.Transfer;
 import com.endava.internship.internetbanking.exceptions.*;
@@ -11,13 +12,16 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.math.RoundingMode.FLOOR;
+import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Slf4j
 
@@ -43,32 +47,57 @@ public class TransferService {
         this.msg = msg.exceptions.transfer;
     }
 
+    @Transactional(REQUIRES_NEW)
     public List<Transfer> findAll() {
         return transferRepository.findAll();
     }
 
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllBefore(LocalDateTime dateTime) {
+        return transferRepository.findAllBefore(dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllAfter(LocalDateTime dateTime) {
+        return transferRepository.findAllAfter(dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllBefore(Account account, LocalDateTime dateTime) {
+        return transferRepository.findAllBefore(account, dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllAfter(Account account, LocalDateTime dateTime) {
+        return transferRepository.findAllAfter(account, dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllBefore(Set<Account> accounts, LocalDateTime dateTime) {
+        return transferRepository.findAllBefore(accounts, dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
+    public List<Transfer> findAllAfter(Set<Account> accounts, LocalDateTime dateTime) {
+        return transferRepository.findAllAfter(accounts, dateTime);
+    }
+
+    @Transactional(REQUIRES_NEW)
     public Optional<Transfer> findById(Long id) {
         return transferRepository.findById(id);
     }
 
+    @Transactional(REQUIRES_NEW)
     public List<Transfer> findByAccountId(Long accountId) {
         return transferRepository.findByAccountId(accountId);
     }
 
+    @Transactional(REQUIRES_NEW)
     public List<Transfer> findByAccount(Account account) {
         return transferRepository.findByAccount(account);
     }
 
-    public boolean transferQuotaExceeded(Account account,
-                                         BigDecimal funds) {
-        return account != null && account.getFunds() != null && funds != null &&
-                account.getFunds().compareTo(funds) > 0 &&
-                funds.divide(account.getFunds(), FLOOR)
-                        .multiply(_100_PERCENT_)
-                        .compareTo(ALLOWED_TRANSFER_QUOTA) > 0;
-    }
-
-    @Transactional
+    @Transactional(REQUIRES_NEW)
     public void transfer(@Nullable Long sourceId,
                          @Nullable Long destinationId,
                          @Nullable BigDecimal funds) {
@@ -104,8 +133,8 @@ public class TransferService {
 
     private void validateTransfer(Transfer transfer) {
 
-        if (transfer.getFunds().compareTo(MINIMUM_TRANSFER_AMOUNT) < 0
-                || transferQuotaExceeded(transfer.getSourceAccount(), transfer.getFunds())) {
+        if (transferQuotaExceeded(transfer) ||
+                transfer.getFunds().compareTo(MINIMUM_TRANSFER_AMOUNT) < 0) {
             throw new InsufficientTransferFundsException(msg.invalidTransferAmount);
         }
 
@@ -143,11 +172,21 @@ public class TransferService {
                 .orElseThrow(() -> new TransferLoggingException(msg.loggingFail));
     }
 
-    public List<Transfer> findAllBefore(LocalDateTime dateTime) {
-        return transferRepository.findAllBefore(dateTime);
+    public boolean transferQuotaExceeded(@NotNull Transfer transfer) {
+        return transfer.getSourceAccount() != null &&
+                transfer.getSourceAccount().getFunds() != null &&
+                transfer.getFunds() != null &&
+                transfer.getSourceAccount().getFunds().compareTo(transfer.getFunds()) > 0 &&
+                transfer.getFunds().divide(transfer.getSourceAccount().getFunds(), FLOOR)
+                        .multiply(_100_PERCENT_)
+                        .compareTo(ALLOWED_TRANSFER_QUOTA) > 0;
     }
 
-    public List<Transfer> findAllAfter(LocalDateTime dateTime) {
-        return transferRepository.findAllAfter(dateTime);
+    public Transfer transferFromDTO(@NotNull ITransferDTO dto) {
+        Transfer.TransferBuilder builder = Transfer.builder();
+        Optional.ofNullable(dto.getFunds()).ifPresent(builder::funds);
+        accountService.findById(dto.getSourceId()).ifPresent(builder::sourceAccount);
+        accountService.findById(dto.getDestinationId()).ifPresent(builder::destinationAccount);
+        return builder.build();
     }
 }

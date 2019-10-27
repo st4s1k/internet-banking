@@ -13,7 +13,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class BankingService {
 
     private final TransferService transferService;
-    private final long _processing_time_ = SECONDS.toMillis(5);
+    private final long _processing_time_ = SECONDS.toMillis(10);
 
     @Autowired
     public BankingService(TransferService transferService) {
