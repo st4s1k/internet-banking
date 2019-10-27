@@ -24,6 +24,7 @@ public class Messages {
         public static class User {
 
             public Creation creation;
+            public String noContent;
 
             @Setter
             public static class Creation {
@@ -37,6 +38,7 @@ public class Messages {
         public static class Account {
 
             public Creation creation;
+            public String noContent;
 
             @Setter
             public static class Creation {
