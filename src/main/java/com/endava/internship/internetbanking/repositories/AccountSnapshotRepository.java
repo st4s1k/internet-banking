@@ -16,9 +16,11 @@ import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
+import static javax.transaction.Transactional.TxType.MANDATORY;
 import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
 
 @Repository
+@Transactional(MANDATORY)
 public class AccountSnapshotRepository {
 
     private final AccountRepository accountRepository;

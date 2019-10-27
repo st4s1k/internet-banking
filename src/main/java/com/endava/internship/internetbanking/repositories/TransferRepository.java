@@ -9,14 +9,17 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
+import static javax.transaction.Transactional.TxType.MANDATORY;
 
 @Repository
+@Transactional(MANDATORY)
 public class TransferRepository {
 
     private final AccountRepository accountRepository;

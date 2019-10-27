@@ -15,9 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
-import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
+import static javax.transaction.Transactional.TxType.MANDATORY;
 
 @Repository
+@Transactional(MANDATORY)
 public class AccountRepository {
 
     private final EntityManager entityManager;
@@ -27,14 +28,20 @@ public class AccountRepository {
         this.entityManager = entityManager;
     }
 
-    public Account save(Account account) {
+    public Optional<Account> save(Account account) {
         entityManager.persist(account);
-        return account;
+        return find(account);
     }
 
     public Optional<Account> update(Account account) {
         entityManager.merge(account);
-        return findById(account.getId());
+        return find(account);
+    }
+
+    private Optional<Account> find(Account account) {
+        return Optional.ofNullable(account)
+                .flatMap(a -> Optional.ofNullable(a.getId()))
+                .flatMap(this::findById);
     }
 
     public Optional<Account> remove(Account account) {

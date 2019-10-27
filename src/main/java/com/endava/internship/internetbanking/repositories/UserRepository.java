@@ -8,10 +8,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static javax.transaction.Transactional.TxType.MANDATORY;
+
 @Repository
+@Transactional(MANDATORY)
 public class UserRepository {
 
     private final EntityManager entityManager;
@@ -21,13 +25,14 @@ public class UserRepository {
         this.entityManager = entityManager;
     }
 
-    public User save(User user) {
+    public Optional<User> save(User user) {
         entityManager.persist(user);
-        return user;
+        return find(user);
     }
 
     public Optional<User> update(User user) {
-        return Optional.ofNullable(entityManager.merge(user));
+        entityManager.merge(user);
+        return find(user);
     }
 
     public Optional<User> remove(User user) {
