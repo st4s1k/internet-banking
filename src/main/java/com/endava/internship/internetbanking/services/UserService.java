@@ -24,12 +24,12 @@ public class UserService {
     }
 
     @Transactional(REQUIRES_NEW)
-    public User createUser(User user) {
+    public Optional<User> createUser(User user) {
         return userRepository.save(user);
     }
 
     @Transactional(REQUIRES_NEW)
-    public User createUser(String name) {
+    public Optional<User> createUser(String name) {
         return userRepository.save(new User(name));
     }
 

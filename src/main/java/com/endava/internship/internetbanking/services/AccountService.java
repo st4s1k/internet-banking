@@ -28,12 +28,12 @@ public class AccountService {
     }
 
     @Transactional(REQUIRES_NEW)
-    public Account createAccount(User user) {
+    public Optional<Account> createAccount(User user) {
         return accountRepository.save(new Account(user));
     }
 
     @Transactional(REQUIRES_NEW)
-    public Account createAccount(Account account) {
+    public Optional<Account> createAccount(Account account) {
         return accountRepository.save(account);
     }
 
