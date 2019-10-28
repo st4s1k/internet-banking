@@ -3,8 +3,9 @@
     <!-- use Spring default values -->
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} %p %m%n" />
-    <property name="APP_LOG_ROOT" value="src/main/resources/logs"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd'T'HH:mm:ss} %p %m%n"/>
+    <property name="LOG_PATH" value="logs"/>
+    <property name="LOG_ARCHIVE" value="${LOG_PATH}/archive"/>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -16,52 +17,61 @@
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
-            <charset>utf8</charset>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>DENY</onMatch>
+        </filter>
     </appender>
 
-    <appender name="applicationLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${APP_LOG_ROOT}/application.log</file>
+    <appender name="applicationLog" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_PATH}/application.log</file>
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${APP_LOG_ROOT}/application-%i.log</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>10</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>10MB</maxFileSize>
-        </triggeringPolicy>
+    </appender>
+
+    <appender name="reconciliationDebugLog" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_PATH}/reconciliation-debug.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
     </appender>
 
     <appender name="reconciliationLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${APP_LOG_ROOT}/reconciliation.log</file>
+        <file>${LOG_PATH}/reconciliation.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_ARCHIVE}/reconciliation.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1MB</totalSizeCap>
+        </rollingPolicy>
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${APP_LOG_ROOT}/reconciliation-%i.log</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>10</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>10MB</maxFileSize>
-        </triggeringPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>DENY</onMatch>
+        </filter>
     </appender>
 
-    <logger name="com.endava.internship.internetbanking.InternetBanking" level="DEBUG">
-        <appender-ref ref="applicationLog" />
-        <appender-ref ref="console" />
-    </logger>
-
-    <logger name="com.endava.internship.internetbanking.services.ReconciliationService" level="INFO">
-        <appender-ref ref="reconciliationLog" />
-        <appender-ref ref="console" />
-    </logger>
-
-    <root level="INFO">
+    <root level="info">
         <appender-ref ref="console"/>
+        <appender-ref ref="applicationLog"/>
     </root>
+
+    <logger name="com.endava.internship.internetbanking.services.ReconciliationService"
+            level="debug"
+            additivity="false">
+        <appender-ref ref="reconciliationLog"/>
+        <appender-ref ref="reconciliationDebugLog"/>
+    </logger>
 
 </configuration>
