@@ -64,7 +64,7 @@ public class InternetBankingIntegrationTests {
 
     private Response createUser(String name) {
         Response response = given().port(port).when()
-                .log().all()
+                .log().ifValidationFails()
                 .header("Content-Type", "application/json")
                 .body(new UserDTO(name))
                 .post(endpoints.users.url);
@@ -74,7 +74,7 @@ public class InternetBankingIntegrationTests {
 
     private Response createAccount(Long userId) {
         Response response = given().port(this.port).when()
-                .log().all()
+                .log().ifValidationFails()
                 .header("Content-Type", "application/json")
                 .body(new AccountDTO(userId))
                 .post(endpoints.accounts.url);
@@ -109,7 +109,7 @@ public class InternetBankingIntegrationTests {
         assertTrue(userService.findByName(userName).isPresent());
 
         response.then().assertThat()
-                .log().all()
+                .log().ifValidationFails()
                 .statusCode(OK.value())
                 .contentType(JSON)
                 .body(notNullValue())
@@ -136,7 +136,7 @@ public class InternetBankingIntegrationTests {
         assertFalse(accountService.findByUserId(createdUserDTO.getId()).isEmpty());
 
         response.then()
-                .log().all()
+                .log().ifValidationFails()
                 .assertThat()
                 .statusCode(OK.value())
                 .contentType(JSON)
@@ -177,7 +177,7 @@ public class InternetBankingIntegrationTests {
                 TEN);
 
         Response topUpResponse = given().port(port)
-                .log().all()
+                .log().ifValidationFails()
                 .header("Content-Type", "application/json")
                 .body(topUpDTO)
                 .put(endpoints.banking.url + endpoints.banking.topUp);
@@ -192,7 +192,7 @@ public class InternetBankingIntegrationTests {
         assertEquals(new BigDecimal(10), optTargetAccount.get().getFunds());
 
         topUpResponse.then()
-                .log().all()
+                .log().ifValidationFails()
                 .assertThat()
                 .statusCode(OK.value())
                 .body(notNullValue())
@@ -226,7 +226,7 @@ public class InternetBankingIntegrationTests {
                 TEN);
 
         Response drawDownResponse = given().port(port)
-                .log().all()
+                .log().ifValidationFails()
                 .header("Content-Type", "application/json")
                 .body(drawDownDTO)
                 .put(endpoints.banking.url + endpoints.banking.drawDown);
@@ -241,7 +241,7 @@ public class InternetBankingIntegrationTests {
         assertEquals(new BigDecimal(90), optTargetAccount.get().getFunds());
 
         drawDownResponse.then()
-                .log().all()
+                .log().ifValidationFails()
                 .assertThat()
                 .statusCode(OK.value())
                 .body(notNullValue())
