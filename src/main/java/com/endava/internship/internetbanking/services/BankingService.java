@@ -31,6 +31,17 @@ public class BankingService {
         }
     }
 
+    public void withdraw(Long accountId, BigDecimal funds) {
+        try {
+            log.info("Executing BankingService#withdraw(Long, BigDecimal) operation...");
+            Thread.sleep(_processing_time_);
+            // TODO: implement withdraw in TransactionService
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+        }
+    }
+
     public void topUp(Long currentAccountId,
                       Long targetAccountId,
                       BigDecimal funds) {
