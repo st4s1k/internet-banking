@@ -10,8 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.math.RoundingMode.FLOOR;
-import static javax.transaction.Transactional.TxType.REQUIRES_NEW;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
 @Slf4j
 
@@ -47,57 +47,57 @@ public class TransferService {
         this.msg = msg.exceptions.transfer;
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAll() {
         return transferRepository.findAll();
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllBefore(LocalDateTime dateTime) {
         return transferRepository.findAllBefore(dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllAfter(LocalDateTime dateTime) {
         return transferRepository.findAllAfter(dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllBefore(Account account, LocalDateTime dateTime) {
         return transferRepository.findAllBefore(account, dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllAfter(Account account, LocalDateTime dateTime) {
         return transferRepository.findAllAfter(account, dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllBefore(Set<Account> accounts, LocalDateTime dateTime) {
         return transferRepository.findAllBefore(accounts, dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findAllAfter(Set<Account> accounts, LocalDateTime dateTime) {
         return transferRepository.findAllAfter(accounts, dateTime);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public Optional<Transfer> findById(Long id) {
         return transferRepository.findById(id);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findByAccountId(Long accountId) {
         return transferRepository.findByAccountId(accountId);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public List<Transfer> findByAccount(Account account) {
         return transferRepository.findByAccount(account);
     }
 
-    @Transactional(REQUIRES_NEW)
+    @Transactional(propagation = REQUIRES_NEW)
     public void transfer(@Nullable Long sourceId,
                          @Nullable Long destinationId,
                          @Nullable BigDecimal funds) {

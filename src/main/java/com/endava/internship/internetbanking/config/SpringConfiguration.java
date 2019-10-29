@@ -14,6 +14,7 @@ import javax.annotation.PreDestroy;
 public class SpringConfiguration {
 
     // TODO: GRACEFUL SHUTDOWN...
+    //  https://github.com/eugenp/tutorials/tree/master/spring-boot-deployment/src/main/java/com/baeldung/gracefulshutdown44
 
     @Bean
     @Primary
