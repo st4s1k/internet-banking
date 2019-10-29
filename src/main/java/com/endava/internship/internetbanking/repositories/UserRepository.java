@@ -3,19 +3,19 @@ package com.endava.internship.internetbanking.repositories;
 import com.endava.internship.internetbanking.entities.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-import static javax.transaction.Transactional.TxType.MANDATORY;
+import static org.springframework.transaction.annotation.Propagation.MANDATORY;
 
 @Repository
-@Transactional(MANDATORY)
+@Transactional(propagation = MANDATORY)
 public class UserRepository {
 
     private final EntityManager entityManager;
