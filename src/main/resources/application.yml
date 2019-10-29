@@ -1,3 +1,12 @@
+management:
+  endpoint:
+    shutdown:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -12,7 +21,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
-         temp:
+        temp:
           # # # # # # # # # # # # # # # # #
           # Avoid exception related       #
           # to new PostgreSQL version     #
